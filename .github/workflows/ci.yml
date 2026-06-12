@@ -1,0 +1,97 @@
+name: StockPilot CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ─── Backend Tests ──────────────────────────────────────────────────────────
+  backend-tests:
+    name: Laravel Tests (PHP 8.3)
+    runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7.2-alpine
+        ports: ['6379:6379']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, pcntl, pdo, redis
+          coverage: xdebug
+
+      - name: Install Composer dependencies
+        working-directory: ./backend
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Copy .env
+        working-directory: ./backend
+        run: cp .env.example .env
+
+      - name: Generate app key & JWT secret
+        working-directory: ./backend
+        run: |
+          php artisan key:generate
+          php artisan jwt:secret
+
+      - name: Run Pest tests
+        working-directory: ./backend
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ':memory:'
+          REDIS_HOST: 127.0.0.1
+          OPENAI_API_KEY: sk-test
+        run: ./vendor/bin/pest --coverage --min=80
+
+  # ─── Frontend Tests ─────────────────────────────────────────────────────────
+  frontend-tests:
+    name: Vue.js Tests (Node 24)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Type check
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Run Vitest
+        working-directory: ./frontend
+        run: npm test -- --run
+
+  # ─── Docker Build ────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-tests]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build PHP image
+        run: docker build -t stockpilot-php:${{ github.sha }} ./docker/php
+
+      - name: Lint docker-compose
+        run: docker compose config -q

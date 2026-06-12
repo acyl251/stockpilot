@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>StockPilot — Document Descriptif</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --navy: #1F3864;
+    --gold:  #C9A84C;
+    --light: #F8F9FB;
+    --border: #DDE3EE;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    font-size: 10.5pt;
+    color: #1a1a2e;
+    background: #fff;
+    line-height: 1.65;
+  }
+
+  /* ── Cover ───────────────────────────────── */
+  .cover {
+    background: linear-gradient(135deg, var(--navy) 0%, #2A4A82 100%);
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 40px;
+    page-break-after: always;
+  }
+
+  .cover .logo {
+    width: 72px; height: 72px;
+    background: var(--gold);
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; font-weight: 700; color: #fff;
+    margin: 0 auto 28px;
+  }
+
+  .cover h1 { font-size: 36pt; font-weight: 700; letter-spacing: -1px; }
+  .cover .subtitle { font-size: 13pt; opacity: 0.75; margin-top: 10px; font-weight: 300; }
+  .cover .divider {
+    width: 60px; height: 3px;
+    background: var(--gold); border-radius: 2px;
+    margin: 28px auto;
+  }
+  .cover .meta { font-size: 11pt; opacity: 0.85; line-height: 2; }
+  .cover .meta strong { font-weight: 600; }
+  .cover .badge {
+    display: inline-block;
+    background: rgba(201,168,76,0.25);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 6px 20px;
+    border-radius: 20px;
+    font-size: 10pt;
+    font-weight: 500;
+    margin-top: 32px;
+  }
+
+  /* ── Content ────────────────────────────── */
+  .page {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 52px;
+  }
+
+  /* Section header */
+  .section-title {
+    font-size: 15pt;
+    font-weight: 700;
+    color: var(--navy);
+    border-left: 4px solid var(--gold);
+    padding-left: 14px;
+    margin: 40px 0 16px;
+    page-break-after: avoid;
+  }
+
+  .section-title:first-of-type { margin-top: 0; }
+
+  h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: var(--navy);
+    margin: 24px 0 10px;
+  }
+
+  p { margin-bottom: 10px; }
+
+  /* ── Tables ─────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 9.5pt;
+    margin: 12px 0 20px;
+    page-break-inside: avoid;
+  }
+
+  thead tr {
+    background: var(--navy);
+    color: #fff;
+  }
+
+  thead th {
+    padding: 9px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9pt;
+    letter-spacing: 0.3px;
+  }
+
+  tbody tr:nth-child(even) { background: var(--light); }
+  tbody tr:hover { background: #EEF2FF; }
+
+  tbody td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  /* ── Code blocks ─────────────────────────── */
+  pre {
+    background: #0f1729;
+    color: #e2e8f0;
+    padding: 18px 20px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 8.5pt;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 12px 0 20px;
+    page-break-inside: avoid;
+    border-left: 3px solid var(--gold);
+  }
+
+  /* ── Info boxes ───────────────────────────── */
+  .info-box {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-left: 4px solid #3B82F6;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 12px 0 20px;
+    font-size: 9.5pt;
+  }
+
+  .warning-box {
+    background: #FFFBEB;
+    border: 1px solid #FDE68A;
+    border-left: 4px solid var(--gold);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 12px 0 20px;
+    font-size: 9.5pt;
+  }
+
+  /* ── KPI cards ─────────────────────────────── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 14px 0 22px;
+  }
+
+  .kpi-card {
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--navy);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+  }
+
+  .kpi-card .kpi-val { font-size: 18pt; font-weight: 700; color: var(--navy); }
+  .kpi-card .kpi-lbl { font-size: 8pt; color: #64748b; margin-top: 4px; }
+
+  /* ── Architecture diagram ──────────────────── */
+  .arch-box {
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 14px 0 22px;
+    font-family: 'Courier New', monospace;
+    font-size: 9pt;
+    line-height: 1.9;
+    color: #1a1a2e;
+    page-break-inside: avoid;
+  }
+
+  /* ── Feature list ──────────────────────────── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 14px 0 22px;
+  }
+
+  .feature-card {
+    background: var(--light);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    page-break-inside: avoid;
+  }
+
+  .feature-card .fc-title {
+    font-weight: 600;
+    color: var(--navy);
+    font-size: 10pt;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .feature-card ul { padding-left: 16px; }
+  .feature-card li { font-size: 9pt; margin-bottom: 3px; }
+
+  /* ── Badge ──────────────────────────────────── */
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 8pt;
+    font-weight: 600;
+    vertical-align: middle;
+  }
+  .badge-green  { background: #DCFCE7; color: #15803D; }
+  .badge-blue   { background: #DBEAFE; color: #1D4ED8; }
+  .badge-gold   { background: #FEF3C7; color: #B45309; }
+  .badge-red    { background: #FEE2E2; color: #DC2626; }
+
+  /* ── Footer ──────────────────────────────────── */
+  .footer {
+    text-align: center;
+    padding: 32px;
+    color: #94a3b8;
+    font-size: 8.5pt;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+
+  .footer strong { color: var(--navy); }
+
+  /* ── Print ──────────────────────────────────── */
+  @media print {
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .cover { min-height: 100vh; }
+    .no-break { page-break-inside: avoid; }
+    h2, h3 { page-break-after: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ COVER PAGE ══ -->
+<div class="cover">
+  <div class="logo">S</div>
+  <h1>StockPilot</h1>
+  <p class="subtitle">Plateforme SaaS Multi-Tenant de Gestion de Stock Intelligente</p>
+  <div class="divider"></div>
+  <div class="meta">
+    <p><strong>Projet de Fin d'Études</strong></p>
+    <p>Institut Supérieur des Études Technologiques de Sousse</p>
+    <p>Département Informatique — Année universitaire 2025 / 2026</p>
+  </div>
+  <div class="badge">Document Descriptif Technique</div>
+</div>
+
+<!-- ═══════════════════════════════════════ CONTENT ══ -->
+<div class="page">
+
+  <!-- ── 1. Présentation ── -->
+  <div class="section-title">1. Présentation Générale</div>
+
+  <p>
+    <strong>StockPilot</strong> est une application web SaaS <em>(Software as a Service)</em>
+    multi-tenant de gestion de stock intelligente, conçue pour répondre aux besoins des PME tunisiennes.
+    Elle permet à plusieurs entreprises indépendantes de gérer leur inventaire de façon sécurisée et
+    isolée sur une infrastructure partagée, avec l'assistance de l'intelligence artificielle.
+  </p>
+
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-val">31</div><div class="kpi-lbl">Endpoints API REST</div></div>
+    <div class="kpi-card"><div class="kpi-val">8</div><div class="kpi-lbl">Tables Oracle/SQLite</div></div>
+    <div class="kpi-card"><div class="kpi-val">3</div><div class="kpi-lbl">Plans d'abonnement</div></div>
+    <div class="kpi-card"><div class="kpi-val">IA</div><div class="kpi-lbl">GPT-4o mini intégré</div></div>
+  </div>
+
+  <!-- ── 2. Objectifs ── -->
+  <div class="section-title">2. Objectifs du Projet</div>
+
+  <table>
+    <thead><tr><th>Objectif</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Architecture Multi-Tenant</strong></td><td>Isolation totale des données entre organisations clientes sur une infrastructure mutualisée</td></tr>
+      <tr><td><strong>Gestion de Stock</strong></td><td>Suivi en temps réel des entrées, sorties et ajustements avec historique complet</td></tr>
+      <tr><td><strong>Intelligence Artificielle</strong></td><td>Suggestions de réapprovisionnement, prévisions de demande et détection d'anomalies via GPT-4o mini</td></tr>
+      <tr><td><strong>Sécurité Renforcée</strong></td><td>Authentification JWT, protection brute-force, isolation triple couche</td></tr>
+      <tr><td><strong>Modèle SaaS</strong></td><td>Plans Starter / Pro / Enterprise avec limites de ressources différenciées</td></tr>
+      <tr><td><strong>Onboarding Intelligent</strong></td><td>Configuration initiale assistée par IA selon le secteur d'activité du client</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── 3. Stack Technique ── -->
+  <div class="section-title">3. Stack Technologique</div>
+
+  <table>
+    <thead><tr><th>Couche</th><th>Technologie</th><th>Version</th><th>Rôle</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Backend</strong></td><td>Laravel (PHP)</td><td>11.x / PHP 8.3</td><td>API REST, logique métier, ORM Eloquent</td></tr>
+      <tr><td><strong>Frontend</strong></td><td>Vue.js + Vite + Tailwind CSS</td><td>3.x</td><td>Interface utilisateur réactive (SPA)</td></tr>
+      <tr><td><strong>Base de données</strong></td><td>Oracle XE</td><td>21c</td><td>Persistance avec triggers PL/SQL</td></tr>
+      <tr><td><strong>Cache &amp; Queue</strong></td><td>Redis</td><td>7.2</td><td>Cache IA (6h–24h), files d'attente</td></tr>
+      <tr><td><strong>Authentification</strong></td><td>JWT (tymon/jwt-auth)</td><td>2.1</td><td>Tokens signés HS256, durée 24h</td></tr>
+      <tr><td><strong>Intelligence Artificielle</strong></td><td>OpenAI GPT-4o mini</td><td>API v1</td><td>Suggestions, prévisions, anomalies</td></tr>
+      <tr><td><strong>État Frontend</strong></td><td>Pinia</td><td>2.x</td><td>Stores réactifs (auth, produits, alertes)</td></tr>
+      <tr><td><strong>Déploiement</strong></td><td>Docker + Nginx + PHP-FPM</td><td>—</td><td>Conteneurisation et orchestration</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── 4. Architecture Multi-Tenant ── -->
+  <div class="section-title">4. Architecture Multi-Tenant</div>
+
+  <p>
+    La sécurité multi-tenant repose sur <strong>trois couches d'isolation imbriquées</strong>,
+    garantissant qu'aucune donnée d'une organisation ne peut être accédée par une autre,
+    même en cas d'erreur applicative.
+  </p>
+
+  <div class="arch-box">
+Requête HTTP entrante
+        │
+        ▼
+┌──────────────────────────────────────────────────────┐
+│  COUCHE 1 — Middleware AuthenticateTenant             │
+│  • Valide le token JWT                               │
+│  • Extrait organisation_id depuis le payload          │
+│  • Injecte dans le conteneur Laravel (app container) │
+└──────────────────────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────────────────────┐
+│  COUCHE 2 — TenantScope (Eloquent Global Scope)       │
+│  • Applique WHERE organisation_id = ? automatiquement │
+│  • Sur TOUS les modèles qui étendent BaseModel       │
+│  • Incontournable, même si le développeur l'oublie   │
+└──────────────────────────────────────────────────────┘
+        │
+        ▼
+┌──────────────────────────────────────────────────────┐
+│  COUCHE 3 — Contrainte Base de Données               │
+│  • organisation_id NOT NULL sur toutes les tables    │
+│  • FK → organisations(id)                            │
+│  • Dernier rempart au niveau SGBD                    │
+└──────────────────────────────────────────────────────┘
+  </div>
+
+  <!-- ── 5. Modèle de Données ── -->
+  <div class="section-title">5. Modèle de Données</div>
+
+  <div class="arch-box">
+plans ──────────────── organisations ──────── users
+                              │
+              ┌───────────────┼──────────────────┐
+              │               │                  │
+         categories     product_types         products ─── stock_movements
+                              │
+                       type_attributes
+  </div>
+
+  <h3>Plans d'abonnement</h3>
+  <table>
+    <thead><tr><th>Plan</th><th>Utilisateurs max</th><th>Produits max</th><th>IA activée</th><th>Prix / mois</th></tr></thead>
+    <tbody>
+      <tr><td>Starter</td><td>3</td><td>200</td><td><span class="badge badge-red">Non</span></td><td>49 TND</td></tr>
+      <tr><td>Pro</td><td>10</td><td>2 000</td><td><span class="badge badge-green">Oui</span></td><td>149 TND</td></tr>
+      <tr><td>Enterprise</td><td>50</td><td>99 999</td><td><span class="badge badge-green">Oui</span></td><td>399 TND</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Trigger Oracle — Mise à jour automatique du stock</h3>
+  <p>Un trigger PL/SQL (<code>trg_update_stock</code>) s'exécute après chaque insertion dans
+  <code>stock_movements</code> et met à jour la quantité du produit au niveau base de données,
+  garantissant la cohérence même hors de l'application.</p>
+
+  <!-- ── 6. Fonctionnalités ── -->
+  <div class="section-title">6. Fonctionnalités Détaillées</div>
+
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="fc-title">🔐 Authentification & Sécurité</div>
+      <ul>
+        <li>Login JWT HS256 (24h + refresh 14j)</li>
+        <li>Protection brute-force avec verrouillage</li>
+        <li>4 rôles : super_admin, admin, gestionnaire, opérateur</li>
+        <li>Révocation de token à la déconnexion</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">📦 Catalogue Produits</div>
+      <ul>
+        <li>CRUD avec catégories et types dynamiques</li>
+        <li>Attributs personnalisables par type (text, number, date, boolean, select)</li>
+        <li>Calcul automatique prix TTC</li>
+        <li>Statuts : En stock / Alerte / Rupture</li>
+        <li>Filtres, recherche et pagination</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">🔄 Mouvements de Stock</div>
+      <ul>
+        <li>3 types : Entrée / Sortie / Ajustement</li>
+        <li>Validation : sortie refusée si stock insuffisant</li>
+        <li>Historique complet avec quantité avant/après</li>
+        <li>Trigger Oracle pour mise à jour atomique</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">✨ Intelligence Artificielle</div>
+      <ul>
+        <li>Suggestions de réapprovisionnement (GPT-4o mini)</li>
+        <li>Détection d'anomalies (règle statistique 3σ)</li>
+        <li>Prévision de demande sur 30 jours</li>
+        <li>KPIs prédictifs sur le dashboard</li>
+        <li>Cache Redis (6h suggestions, 24h prévisions)</li>
+        <li>Dégradation gracieuse si IA indisponible</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">📊 Dashboard Temps Réel</div>
+      <ul>
+        <li>Total produits, valeur du stock, ruptures, alertes</li>
+        <li>Graphique des mouvements sur 7 jours</li>
+        <li>KPIs prédictifs IA (plan Pro/Enterprise)</li>
+        <li>Badge d'alertes dans la navigation</li>
+      </ul>
+    </div>
+    <div class="feature-card">
+      <div class="fc-title">🚀 Onboarding Intelligent</div>
+      <ul>
+        <li>Wizard 3 étapes pour nouveaux clients</li>
+        <li>Sélection du secteur d'activité</li>
+        <li>Génération automatique de types de produits par IA</li>
+        <li>Création en base des types et attributs sélectionnés</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ── 7. API REST ── -->
+  <div class="section-title">7. API REST — 31 Endpoints</div>
+
+  <table>
+    <thead><tr><th>Méthode</th><th>Endpoint</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/auth/login</td><td>Authentification — retourne le token JWT</td></tr>
+      <tr><td><span class="badge badge-red">POST</span></td><td>/api/auth/logout</td><td>Révocation du token JWT</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/auth/me</td><td>Profil utilisateur + organisation + plan</td></tr>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/auth/refresh</td><td>Renouvellement du token</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/dashboard</td><td>KPIs, graphique 7j, KPIs IA (si Pro)</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/dashboard/forecast/{id}</td><td>Prévision de demande IA pour un produit</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/products</td><td>Liste paginée avec filtres (catégorie, statut, recherche)</td></tr>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/products</td><td>Création d'un produit</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/products/{id}</td><td>Détail d'un produit avec attributs</td></tr>
+      <tr><td><span class="badge badge-gold">PUT</span></td><td>/api/products/{id}</td><td>Modification d'un produit</td></tr>
+      <tr><td><span class="badge badge-red">DELETE</span></td><td>/api/products/{id}</td><td>Suppression d'un produit</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/movements</td><td>Historique paginé avec filtres</td></tr>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/movements</td><td>Créer un mouvement (entrée/sortie/ajustement)</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/movements/{id}</td><td>Détail d'un mouvement</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/categories</td><td>Liste des catégories de l'organisation</td></tr>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/categories</td><td>Créer une catégorie</td></tr>
+      <tr><td><span class="badge badge-gold">PUT</span></td><td>/api/categories/{id}</td><td>Modifier une catégorie</td></tr>
+      <tr><td><span class="badge badge-red">DELETE</span></td><td>/api/categories/{id}</td><td>Supprimer une catégorie</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/product-types</td><td>Liste des types de produits</td></tr>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/product-types</td><td>Créer un type de produit</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/product-types/{id}</td><td>Détail d'un type avec ses attributs</td></tr>
+      <tr><td><span class="badge badge-gold">PUT</span></td><td>/api/product-types/{id}</td><td>Modifier un type de produit</td></tr>
+      <tr><td><span class="badge badge-red">DELETE</span></td><td>/api/product-types/{id}</td><td>Supprimer un type de produit</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/alerts/stock</td><td>Ruptures et alertes de stock</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/alerts/suggestions</td><td>Suggestions IA de réapprovisionnement</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/alerts/anomalies</td><td>Détection d'anomalies statistiques</td></tr>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/onboarding/suggest</td><td>Suggestions de types par secteur (IA)</td></tr>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/onboarding/confirm</td><td>Confirmer et créer les types sélectionnés</td></tr>
+      <tr><td><span class="badge badge-green">GET</span></td><td>/api/users</td><td>Liste des utilisateurs de l'organisation</td></tr>
+      <tr><td><span class="badge badge-blue">POST</span></td><td>/api/users</td><td>Créer un utilisateur</td></tr>
+      <tr><td><span class="badge badge-gold">PATCH</span></td><td>/api/users/{id}</td><td>Modifier un utilisateur</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── 8. Sécurité ── -->
+  <div class="section-title">8. Sécurité</div>
+
+  <table>
+    <thead><tr><th>Mécanisme</th><th>Implémentation</th><th>Détail</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Authentification</strong></td><td>JWT HS256</td><td>Token 24h, refresh 14 jours, invalidation à la déconnexion</td></tr>
+      <tr><td><strong>Isolation tenant</strong></td><td>Triple couche</td><td>Middleware + Global Scope Eloquent + FK base de données</td></tr>
+      <tr><td><strong>Brute-force</strong></td><td>Compteur + verrouillage</td><td>Champ <code>tentatives_connexion</code>, verrouillage temporaire</td></tr>
+      <tr><td><strong>Validation</strong></td><td><code>$request->validate()</code></td><td>Sur tous les endpoints d'écriture avec règles strictes</td></tr>
+      <tr><td><strong>Injection SQL</strong></td><td>ORM Eloquent</td><td>Requêtes préparées, aucun SQL brut non paramétré</td></tr>
+      <tr><td><strong>CORS</strong></td><td>Middleware Laravel</td><td>Origines autorisées configurables</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── 9. Structure du projet ── -->
+  <div class="section-title">9. Structure du Projet</div>
+
+  <pre>stockpilot/
+├── backend/                         ← Laravel 11
+│   ├── app/
+│   │   ├── Http/
+│   │   │   ├── Controllers/API/     ← 9 contrôleurs (Auth, Product, Movement…)
+│   │   │   └── Middleware/          ← AuthenticateTenant.php
+│   │   ├── Models/                  ← 8 modèles Eloquent
+│   │   │   └── Scopes/              ← TenantScope.php
+│   │   └── Services/
+│   │       ├── AIService.php        ← OpenAI + cache Redis
+│   │       └── StockService.php     ← Logique métier stock
+│   ├── database/
+│   │   └── migrations/              ← 8 migrations Oracle/SQLite
+│   └── tests/
+│       ├── Feature/                 ← MultiTenantIsolationTest, StockMovementTest
+│       └── Unit/                    ← AIServiceTest
+│
+├── frontend/                        ← Vue.js 3 + Vite + Tailwind CSS
+│   └── src/
+│       ├── views/                   ← 9 vues (Dashboard, Products, Movements…)
+│       ├── components/              ← 6 composants réutilisables
+│       ├── stores/                  ← 4 stores Pinia (auth, products, alerts…)
+│       ├── services/api.ts          ← Client Axios + intercepteurs JWT
+│       └── router/index.ts          ← Guards auth + redirection onboarding
+│
+└── docker-compose.yml               ← Nginx + PHP-FPM + Oracle XE + Redis</pre>
+
+  <!-- ── 10. Tests ── -->
+  <div class="section-title">10. Tests Automatisés</div>
+
+  <table>
+    <thead><tr><th>Suite</th><th>Fichier</th><th>Cas testés</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Isolation Multi-Tenant</strong></td>
+        <td><code>MultiTenantIsolationTest.php</code></td>
+        <td>MIT-01 à MIT-07 : organisation_id dans JWT, scoping liste produits, lecture/modification/suppression cross-tenant bloquées, isolation mouvements, injection organisation_id refusée</td>
+      </tr>
+      <tr>
+        <td><strong>Mouvements de Stock</strong></td>
+        <td><code>StockMovementTest.php</code></td>
+        <td>FT-01 à FT-06 : entrée/sortie/ajustement, sortie au-delà du stock → ValidationException, quantité avant/après correcte, changement de statut produit</td>
+      </tr>
+      <tr>
+        <td><strong>Service IA</strong></td>
+        <td><code>AIServiceTest.php</code></td>
+        <td>AI-01 à AI-05 : types onboarding, mise en cache Redis, détection anomalies, prévision demande, échec gracieux sans clé API</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ── 11. Déploiement ── -->
+  <div class="section-title">11. Déploiement</div>
+
+  <h3>Développement local (sans Docker)</h3>
+  <pre># Backend (PHP 8.3 requis)
+cd backend
+php artisan migrate
+php artisan db:seed
+php -d max_execution_time=0 artisan serve --port=8000
+
+# Frontend (Node.js requis)
+cd frontend
+npm install
+npm run dev
+# → http://localhost:5173</pre>
+
+  <h3>Production (Docker Compose)</h3>
+  <pre>docker-compose up -d          # Démarre tous les services
+php artisan migrate           # Crée les tables Oracle
+php artisan db:seed           # Données initiales
+# → http://localhost</pre>
+
+  <div class="warning-box">
+    <strong>Note :</strong> En production, Oracle XE 21c est requis pour les triggers PL/SQL
+    (<code>trg_update_stock</code>) et les colonnes virtuelles (<code>prix_achat_ttc</code>,
+    <code>prix_vente_ttc</code>). En développement local, SQLite est utilisé avec une logique
+    équivalente implémentée en PHP.
+  </div>
+
+  <!-- ── Footer ── -->
+  <div class="footer">
+    <strong>StockPilot</strong> — Projet de Fin d'Études<br>
+    Institut Supérieur des Études Technologiques de Sousse — 2025 / 2026<br>
+    Laravel 11 · Vue.js 3 · Oracle XE 21c · GPT-4o mini · Docker
+  </div>
+
+</div><!-- /page -->
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(choco list --local-only php 2>&1)",
+      "PowerShell(choco list php 2>&1)"
+    ]
+  }
+}

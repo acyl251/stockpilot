@@ -1,0 +1,25 @@
+# Node
+frontend/node_modules
+
+# PHP vendor (rebuilt inside Docker)
+backend/vendor
+
+# Laravel generated files
+backend/.env
+backend/storage/logs/*.log
+backend/bootstrap/cache/*.php
+
+# Dev SQLite database
+*.sqlite
+
+# Git
+.git
+.github
+
+# Editor / OS
+.vscode
+.idea
+*.DS_Store
+
+# Docker files (don't recurse into themselves)
+docker/php/instantclient
