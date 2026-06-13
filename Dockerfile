@@ -1,3 +1,6 @@
+# Local Docker fallback — Railway uses backend/nixpacks.toml (via railway.json).
+# Use this file with: docker build -t stockpilot . && docker run -p 8080:8080 stockpilot
+#
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 1 — Build Vue 3 SPA
 # ─────────────────────────────────────────────────────────────────────────────
@@ -58,14 +61,14 @@ COPY docker/supervisord.railway.conf /etc/supervisor/conf.d/supervisord.conf
 COPY docker/start.sh             /start.sh
 RUN chmod +x /start.sh
 
-# Laravel writable directories
+# Laravel writable directories — must exist before any artisan command runs
 RUN mkdir -p \
         storage/logs \
         storage/framework/cache/data \
         storage/framework/sessions \
         storage/framework/views \
         bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache \
+    && chmod -R 777 storage bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 EXPOSE 8080

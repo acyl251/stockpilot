@@ -1,0 +1,61 @@
+# nixpacks.toml — StockPilot Railway deployment
+#
+# Railway keeps the FULL repo as build context (rootDirectory stays at repo root),
+# but uses THIS file as config because railway.json points to backend/nixpacks.toml.
+# That lets us access both frontend/ and backend/ during the build.
+
+# ── 1. System packages ────────────────────────────────────────────────────────
+[phases.setup]
+nixPkgs = [
+  # PHP 8.3 + extensions required by Laravel 11
+  "php83",
+  "php83Extensions.pdo",
+  "php83Extensions.pdo_mysql",
+  "php83Extensions.bcmath",
+  "php83Extensions.zip",
+  "php83Extensions.mbstring",
+  "php83Extensions.pcntl",
+  "php83Extensions.tokenizer",
+  "php83Extensions.dom",
+  "php83Extensions.xml",
+  "php83Extensions.ctype",
+  "php83Extensions.fileinfo",
+  "php83Extensions.openssl",
+  "php83Extensions.curl",
+  # Composer
+  "php83Packages.composer",
+  # Node.js (to build the Vue 3 frontend)
+  "nodejs_20",
+  "nodePackages.npm"
+]
+
+# ── 2. Build ──────────────────────────────────────────────────────────────────
+[phases.build]
+cmds = [
+  # 2a. Install Node deps and build Vue SPA → backend/public/
+  #     (vite.config.ts uses outDir: '../backend/public' relative to frontend/)
+  "npm --prefix frontend ci --prefer-offline",
+  "cd frontend && npx vite build --outDir ../backend/public",
+
+  # 2b. Install PHP deps (skip ext-oci8 — Oracle not used on Railway)
+  "composer --working-dir=backend install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-oci8",
+
+  # 2c. Create writable Laravel directories and set permissions
+  "mkdir -p backend/storage/logs \
+            backend/storage/framework/cache/data \
+            backend/storage/framework/sessions \
+            backend/storage/framework/views \
+            backend/bootstrap/cache",
+  "chmod -R 777 backend/storage backend/bootstrap/cache"
+]
+
+# ── 3. Start command (runs at container startup on every deploy) ───────────────
+[start]
+cmd = """
+  cd backend \
+  && php artisan config:cache \
+  && php artisan route:cache \
+  && php artisan view:cache \
+  && php artisan migrate --force --no-interaction \
+  && php artisan serve --host 0.0.0.0 --port ${PORT:-8080}
+"""
