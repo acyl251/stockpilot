@@ -25,8 +25,10 @@ class SeedAdminCommand extends Command
 
     public function handle(): int
     {
+        $this->seedSuperAdmin();
+
         if (User::where('email', 'admin@test.tn')->exists()) {
-            $this->info('Admin already exists — skipping.');
+            $this->info('Demo admin already exists — skipping demo data.');
             return self::SUCCESS;
         }
 
@@ -100,8 +102,36 @@ class SeedAdminCommand extends Command
             'actif'           => true,
         ]);
 
-        $this->info("Created admin {$admin->email} (org={$org->nom}, password: Password123!)");
+        $this->info("Created demo admin {$admin->email} (org={$org->nom}, password: Password123!)");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Create the platform super-admin (no organisation). Idempotent.
+     * Credentials come from env, with sensible defaults.
+     */
+    private function seedSuperAdmin(): void
+    {
+        $email = env('SUPER_ADMIN_EMAIL', 'admin@stockpilot.tn');
+
+        if (User::where('email', $email)->exists()) {
+            $this->info("Super-admin {$email} already exists — skipping.");
+            return;
+        }
+
+        $password = env('SUPER_ADMIN_PASSWORD', 'SuperAdmin@2025');
+
+        User::create([
+            'organisation_id' => null,
+            'nom'             => 'Super',
+            'prenom'          => 'Admin',
+            'email'           => $email,
+            'password'        => Hash::make($password),
+            'role'            => 'super_admin',
+            'actif'           => true,
+        ]);
+
+        $this->info("Created super-admin {$email}");
     }
 }
