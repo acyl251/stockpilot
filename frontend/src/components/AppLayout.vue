@@ -29,7 +29,7 @@
               {{ userInitials }}
             </div>
             <span class="text-sm text-slate-600 hidden md:block">{{ auth.user?.prenom }}</span>
-            <button @click="auth.logout()" class="text-slate-400 hover:text-red-500 transition-colors text-sm">
+            <button @click="handleLogout" class="text-slate-400 hover:text-red-500 transition-colors text-sm">
               Déconnexion
             </button>
           </div>
@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAlertsStore } from '@/stores/alerts'
 import AppSidebar from './AppSidebar.vue'
@@ -54,6 +54,12 @@ import AppSidebar from './AppSidebar.vue'
 const auth   = useAuthStore()
 const alerts = useAlertsStore()
 const route  = useRoute()
+const router = useRouter()
+
+async function handleLogout() {
+  await auth.logout()
+  router.push({ name: 'landing' })
+}
 
 const pageTitles: Record<string, string> = {
   dashboard: 'Tableau de bord',
