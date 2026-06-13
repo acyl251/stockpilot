@@ -28,4 +28,4 @@ cmds = [
 cmds = []
 
 [start]
-cmd = "php artisan package:discover --ansi; ( php artisan migrate --force --no-interaction && php artisan app:seed-admin ) & php artisan serve --host 0.0.0.0 --port ${PORT:-8080}"
+cmd = "php artisan package:discover --ansi; echo '>>> RUNNING MIGRATIONS'; php artisan migrate --force --no-interaction; echo '>>> RUNNING SEED'; php artisan app:seed-admin; echo '>>> STARTING SERVER'; php artisan serve --host 0.0.0.0 --port ${PORT:-8080}"
