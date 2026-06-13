@@ -16,9 +16,8 @@ backend/.phpunit.result.cache
 frontend/node_modules/
 frontend/dist/
 
-# ── Compiled SPA (Vite emits these into backend/public — Railway rebuilds) ────
-backend/public/index.html
-backend/public/assets/
+# ── Compiled SPA — committed to git so Railway (rootDirectory=backend) can serve it
+# backend/public/index.html and backend/public/assets/ are intentionally tracked
 
 # ── OS / IDE ─────────────────────────────────────────────────────────────────
 .DS_Store

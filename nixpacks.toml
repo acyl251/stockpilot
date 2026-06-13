@@ -14,23 +14,18 @@ nixPkgs = [
   "php83Extensions.fileinfo",
   "php83Extensions.openssl",
   "php83Extensions.curl",
-  "php83Packages.composer",
-  "nodejs_20",
-  "nodePackages.npm"
+  "php83Packages.composer"
 ]
 
 [phases.install]
 cmds = [
-  "mkdir -p backend/bootstrap/cache backend/storage/logs backend/storage/framework/cache/data backend/storage/framework/sessions backend/storage/framework/views",
-  "chmod -R 777 backend/bootstrap backend/storage",
-  "composer --working-dir=backend install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-oci8",
-  "npm --prefix frontend ci --prefer-offline"
+  "mkdir -p bootstrap/cache storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views",
+  "chmod -R 777 bootstrap storage",
+  "composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-oci8"
 ]
 
 [phases.build]
-cmds = [
-  "cd frontend && npx vite build --outDir ../backend/public"
-]
+cmds = []
 
 [start]
-cmd = "cd backend && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force --no-interaction && php artisan serve --host 0.0.0.0 --port ${PORT:-8080}"
+cmd = "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force --no-interaction && php artisan serve --host 0.0.0.0 --port ${PORT:-8080}"
