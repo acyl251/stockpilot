@@ -22,11 +22,11 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>Prénom *</label>
-                  <input v-model="form.prenom" type="text" placeholder="Acyl" required/>
+                  <input v-model="form.prenom" type="text" placeholder="" required/>
                 </div>
                 <div class="form-group">
                   <label>Nom *</label>
-                  <input v-model="form.nom" type="text" placeholder="Dhifallah" required/>
+                  <input v-model="form.nom" type="text" placeholder="" required/>
                 </div>
               </div>
               <div class="form-row">
