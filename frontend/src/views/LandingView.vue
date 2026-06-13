@@ -474,7 +474,7 @@ const planFeatures: Record<string, string[]> = {
 }
 
 /* Parallax layers */
-.layer { position: absolute; inset: 0; will-change: transform; }
+.layer { position: absolute; inset: 0; will-change: transform; pointer-events: none; }
 
 .layer-bg {
   background: radial-gradient(ellipse 80% 60% at 50% 30%, #0f172a 0%, #030712 70%);
@@ -749,11 +749,11 @@ const planFeatures: Record<string, string[]> = {
   position: relative; padding: 120px 32px; text-align: center; overflow: hidden;
 }
 .cta-bg {
-  position: absolute; inset: 0;
+  position: absolute; inset: 0; pointer-events: none;
   background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(245,158,11,.07) 0%, transparent 70%);
 }
 .cta-glow {
-  position: absolute; width: 400px; height: 400px;
+  position: absolute; width: 400px; height: 400px; pointer-events: none;
   background: radial-gradient(circle, rgba(245,158,11,.15) 0%, transparent 70%);
   top: 50%; left: 50%; transform: translate(-50%,-50%);
   border-radius: 50%;
