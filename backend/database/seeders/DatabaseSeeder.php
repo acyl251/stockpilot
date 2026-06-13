@@ -15,6 +15,12 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Idempotent: skip if the demo admin already exists (safe to run on every deploy)
+        if (User::where('email', 'admin@test.tn')->exists()) {
+            $this->command?->info('Database already seeded — skipping.');
+            return;
+        }
+
         $plan = Plan::where('nom', 'Pro')->first();
 
         $org = Organisation::create([
