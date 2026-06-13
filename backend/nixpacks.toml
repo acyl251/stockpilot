@@ -19,13 +19,17 @@ nixPkgs = [
   "nodePackages.npm"
 ]
 
+[phases.install]
+cmds = [
+  "mkdir -p backend/bootstrap/cache backend/storage/logs backend/storage/framework/cache/data backend/storage/framework/sessions backend/storage/framework/views",
+  "chmod -R 777 backend/bootstrap backend/storage",
+  "composer --working-dir=backend install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-oci8",
+  "npm --prefix frontend ci --prefer-offline"
+]
+
 [phases.build]
 cmds = [
-  "npm --prefix frontend ci --prefer-offline",
-  "cd frontend && npx vite build --outDir ../backend/public",
-  "composer --working-dir=backend install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-oci8",
-  "mkdir -p backend/storage/logs backend/storage/framework/cache/data backend/storage/framework/sessions backend/storage/framework/views backend/bootstrap/cache",
-  "chmod -R 777 backend/storage backend/bootstrap/cache"
+  "cd frontend && npx vite build --outDir ../backend/public"
 ]
 
 [start]
