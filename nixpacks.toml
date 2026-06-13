@@ -21,11 +21,11 @@ nixPkgs = [
 cmds = [
   "mkdir -p bootstrap/cache storage/logs storage/framework/cache/data storage/framework/sessions storage/framework/views",
   "chmod -R 777 bootstrap storage",
-  "composer install --no-dev --optimize-autoloader --no-interaction --ignore-platform-req=ext-oci8"
+  "composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-req=ext-oci8"
 ]
 
 [phases.build]
 cmds = []
 
 [start]
-cmd = "php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force --no-interaction && php artisan serve --host 0.0.0.0 --port ${PORT:-8080}"
+cmd = "php artisan package:discover --ansi && php artisan config:cache && php artisan route:cache && php artisan view:cache && php artisan migrate --force --no-interaction && php artisan serve --host 0.0.0.0 --port ${PORT:-8080}"
