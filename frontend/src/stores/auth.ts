@@ -27,12 +27,21 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin         = computed(() => ['admin', 'super_admin'].includes(user.value?.role ?? ''))
   const isSuperAdmin    = computed(() => user.value?.role === 'super_admin')
 
-  async function login(email: string, password: string) {
-    const { data } = await authApi.login(email, password)
+  async function setSession(data: any) {
     accessToken.value = data.access_token
     localStorage.setItem('access_token', data.access_token)
     user.value = data.user
     await fetchMe()
+  }
+
+  async function login(email: string, password: string) {
+    const { data } = await authApi.login(email, password)
+    await setSession(data)
+  }
+
+  async function verifyEmail(email: string, code: string) {
+    const { data } = await authApi.verifyEmail(email, code)
+    await setSession(data)
   }
 
   async function fetchMe() {
@@ -52,5 +61,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, login, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, login, verifyEmail, logout, fetchMe, initPromise }
 })

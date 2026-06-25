@@ -1,6 +1,46 @@
 <template>
   <div class="space-y-6">
-    <div class="flex items-center justify-between">
+    <!-- Informations de facturation (apparaissent sur les factures PDF) -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-semibold text-navy">Informations de facturation</h2>
+        <span class="text-xs text-slate-400">Affichées sur vos factures PDF</span>
+      </div>
+      <p class="text-sm text-slate-500 mb-4">Renseignez votre matricule fiscal et votre adresse pour des factures conformes.</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">Raison sociale</label>
+          <input v-model="org.nom" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gold" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">Matricule fiscal</label>
+          <input v-model="org.matricule_fiscal" placeholder="Ex : 1234567A/P/M/000"
+            class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gold" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">Téléphone</label>
+          <input v-model="org.telephone" class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gold" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-500 mb-1">Email</label>
+          <input :value="org.email_contact" disabled class="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm w-full text-slate-400" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-xs text-slate-500 mb-1">Adresse</label>
+          <input v-model="org.adresse" placeholder="Rue, ville, code postal"
+            class="border border-slate-300 rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:ring-2 focus:ring-gold" />
+        </div>
+      </div>
+      <div class="flex items-center gap-3 mt-4">
+        <button @click="saveOrg" :disabled="orgSaving" class="btn-primary disabled:opacity-60">
+          {{ orgSaving ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+        <span v-if="orgSaved" class="text-emerald-600 text-sm">✓ Enregistré</span>
+        <span v-if="orgError" class="text-red-500 text-sm">{{ orgError }}</span>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between border-t border-slate-200 pt-6">
       <h2 class="text-lg font-semibold text-navy">Types de produits</h2>
       <button @click="showTypeForm = true" class="btn-primary">+ Nouveau type</button>
     </div>
@@ -88,13 +128,46 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useProductsStore } from '@/stores/products'
-import { categoriesApi } from '@/services/api'
+import { categoriesApi, organisationApi } from '@/services/api'
 import TypeFormModal from '@/components/TypeFormModal.vue'
 
 const store        = useProductsStore()
 const types        = ref<any[]>([])
 const categories   = ref<any[]>([])
 const loading      = ref(true)
+
+// Informations de facturation
+const org      = ref<any>({ nom: '', matricule_fiscal: '', telephone: '', adresse: '', email_contact: '' })
+const orgSaving = ref(false)
+const orgSaved  = ref(false)
+const orgError  = ref('')
+
+async function loadOrg() {
+  try {
+    const { data } = await organisationApi.get()
+    org.value = data
+  } catch { /* ignore */ }
+}
+
+async function saveOrg() {
+  orgSaving.value = true
+  orgSaved.value = false
+  orgError.value = ''
+  try {
+    await organisationApi.update({
+      nom: org.value.nom,
+      matricule_fiscal: org.value.matricule_fiscal || null,
+      telephone: org.value.telephone || null,
+      adresse: org.value.adresse || null,
+    })
+    orgSaved.value = true
+    setTimeout(() => (orgSaved.value = false), 3000)
+  } catch (e: any) {
+    orgError.value = e.response?.data?.message ?? 'Erreur lors de l\'enregistrement.'
+  } finally {
+    orgSaving.value = false
+  }
+}
 const showTypeForm = ref(false)
 const showCatForm  = ref(false)
 const catSaving    = ref(false)
@@ -160,5 +233,5 @@ async function refreshCategories() {
   categories.value = store.categories
 }
 
-onMounted(load)
+onMounted(() => { load(); loadOrg() })
 </script>

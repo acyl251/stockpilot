@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\VerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,7 +12,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends Controller
 {
-    public function login(Request $request): JsonResponse
+    public function login(Request $request, VerificationService $verification): JsonResponse
     {
         $request->validate([
             'email'    => 'required|email',
@@ -41,6 +42,66 @@ class AuthController extends Controller
 
         $user->resetLoginAttempts();
 
+        // Email non vérifié → on (re)génère un code si besoin et on bloque l'accès.
+        if ($user->needsEmailVerification()) {
+            if (is_null($user->verification_code_expires_at) || $user->verification_code_expires_at->isPast()) {
+                $verification->issue($user);
+            }
+
+            return response()->json([
+                'verification_required' => true,
+                'email'                 => $user->email,
+                'message'               => 'Votre adresse email doit être vérifiée. Un code de confirmation vous a été envoyé.',
+            ], 403);
+        }
+
+        return $this->tokenResponse($user);
+    }
+
+    /** Vérifie le code reçu par email et connecte l'utilisateur. */
+    public function verifyEmail(Request $request, VerificationService $verification): JsonResponse
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'code'  => 'required|string',
+        ]);
+
+        $user = User::withoutGlobalScopes()->where('email', $request->email)->first();
+
+        if (! $user) {
+            return $this->errorResponse('Compte introuvable.', 404);
+        }
+
+        if (! $user->needsEmailVerification()) {
+            return $this->errorResponse('Cet email est déjà vérifié. Connectez-vous normalement.', 422);
+        }
+
+        if (! $verification->verify($user, $request->code)) {
+            return $this->errorResponse('Code invalide ou expiré.', 422);
+        }
+
+        return $this->tokenResponse($user);
+    }
+
+    /** Renvoie un nouveau code de confirmation. */
+    public function resendCode(Request $request, VerificationService $verification): JsonResponse
+    {
+        $request->validate(['email' => 'required|email']);
+
+        $user = User::withoutGlobalScopes()->where('email', $request->email)->first();
+
+        if ($user && $user->needsEmailVerification()) {
+            $verification->issue($user);
+        }
+
+        // Réponse neutre : ne révèle pas l'existence du compte.
+        return response()->json([
+            'message' => 'Si un compte non vérifié correspond à cet email, un nouveau code vient d\'être envoyé.',
+        ]);
+    }
+
+    private function tokenResponse(User $user): JsonResponse
+    {
         $token = JWTAuth::fromUser($user);
 
         return response()->json([

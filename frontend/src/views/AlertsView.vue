@@ -17,6 +17,11 @@
 
     <!-- Tab: Ruptures & Alertes -->
     <div v-if="activeTab === 'stock'">
+      <div v-if="(alerts.ruptures.length + alerts.alertes.length) > 0" class="flex justify-end mb-3">
+        <button @click="notifyStock" :disabled="notifying" class="btn-primary text-sm disabled:opacity-50">
+          {{ notifying ? 'Envoi…' : '📲 Alerter par WhatsApp' }}
+        </button>
+      </div>
       <div v-if="alerts.loading" class="text-center py-10 text-slate-400">Chargement…</div>
       <div v-else class="space-y-4">
         <!-- Ruptures -->
@@ -143,10 +148,27 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAlertsStore } from '@/stores/alerts'
 import { useAuthStore } from '@/stores/auth'
+import { alertsApi } from '@/services/api'
 
 const alerts     = useAlertsStore()
 const auth       = useAuthStore()
 const activeTab  = ref('stock')
+const notifying  = ref(false)
+
+async function notifyStock() {
+  notifying.value = true
+  try {
+    const { data } = await alertsApi.notify()
+    if (data.wa_link) window.open(data.wa_link, '_blank')
+    if (data.driver === 'twilio' && data.status === 'sent') {
+      alert('Alerte stock envoyée par WhatsApp.')
+    }
+  } catch (e: any) {
+    alert(e.response?.data?.message || 'Impossible d\'envoyer l\'alerte.')
+  } finally {
+    notifying.value = false
+  }
+}
 
 const tabs = computed(() => [
   { key: 'stock',       label: 'Ruptures & Alertes', badge: alerts.totalAlerts() || undefined },

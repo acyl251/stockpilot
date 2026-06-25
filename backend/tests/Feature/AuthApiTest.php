@@ -43,7 +43,7 @@ test('IT-AUTH-02: mauvais mot de passe retourne 401', function () {
     ]);
 
     $response->assertUnauthorized()
-        ->assertJsonPath('message', 'Identifiants incorrects.');
+        ->assertJsonPath('message', 'Email ou mot de passe incorrect.');
 });
 
 // IT-AUTH-03: Email inexistant â†' 401

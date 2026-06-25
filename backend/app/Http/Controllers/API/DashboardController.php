@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Sale;
 use App\Models\StockMovement;
 use App\Services\AIService;
 use Illuminate\Http\JsonResponse;
@@ -71,6 +72,49 @@ class DashboardController extends Controller
             ->orderBy(DB::raw($dateTrunc))
             ->get();
 
+        // ── CA Caisse (ventes réelles, hors annulées) ───────────────────────
+        $caisseJour = Sale::where('statut', '!=', Sale::STATUT_ANNULEE)
+            ->whereDate('date_vente', today())
+            ->selectRaw('COUNT(*) as nb, COALESCE(SUM(total_ttc), 0) as ca')
+            ->first();
+
+        $caisseMois = Sale::where('statut', '!=', Sale::STATUT_ANNULEE)
+            ->whereMonth('date_vente', now()->month)
+            ->whereYear('date_vente', now()->year)
+            ->selectRaw('COUNT(*) as nb, COALESCE(SUM(total_ttc), 0) as ca')
+            ->first();
+
+        // ── Rentabilité du mois (marge brute = vente HT − coût d'achat figé) ──
+        $margeMois = Sale::where('sales.statut', '!=', Sale::STATUT_ANNULEE)
+            ->whereMonth('sales.date_vente', now()->month)
+            ->whereYear('sales.date_vente', now()->year)
+            ->join('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+            ->selectRaw('COALESCE(SUM(sale_items.prix_unitaire_ht * sale_items.quantite), 0) as ca_ht')
+            ->selectRaw('COALESCE(SUM(sale_items.prix_achat_unitaire * sale_items.quantite), 0) as cout')
+            ->first();
+
+        $caHt     = (float) $margeMois->ca_ht;
+        $marge    = round($caHt - (float) $margeMois->cout, 3);
+        $margePct = $caHt > 0 ? round($marge / $caHt * 100, 1) : 0.0;
+
+        // Top 5 produits par marge générée ce mois-ci
+        $topMarge = Sale::where('sales.statut', '!=', Sale::STATUT_ANNULEE)
+            ->whereMonth('sales.date_vente', now()->month)
+            ->whereYear('sales.date_vente', now()->year)
+            ->join('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+            ->groupBy('sale_items.designation')
+            ->selectRaw('sale_items.designation as nom')
+            ->selectRaw('SUM(sale_items.quantite) as qte')
+            ->selectRaw('SUM((sale_items.prix_unitaire_ht - sale_items.prix_achat_unitaire) * sale_items.quantite) as marge')
+            ->orderByDesc('marge')
+            ->limit(5)
+            ->get()
+            ->map(fn($r) => [
+                'nom'   => $r->nom,
+                'qte'   => (float) $r->qte,
+                'marge' => round((float) $r->marge, 3),
+            ]);
+
         $response = [
             'kpis' => [
                 'total_produits'        => $totalProduits,
@@ -80,6 +124,18 @@ class DashboardController extends Controller
                 'mouvements_aujourdhui' => $mouvementsAujourdhui,
                 'ca_mois'               => round($caMois, 3),
                 'ca_7j'                 => round($ca7j, 3),
+            ],
+            'caisse' => [
+                'ca_jour'      => round((float) $caisseJour->ca, 3),
+                'nb_jour'      => (int) $caisseJour->nb,
+                'ca_mois_ttc'  => round((float) $caisseMois->ca, 3),
+                'nb_mois'      => (int) $caisseMois->nb,
+            ],
+            'rentabilite' => [
+                'ca_ht_mois'   => round($caHt, 3),
+                'marge_mois'   => $marge,
+                'marge_pct'    => $margePct,
+                'top_produits' => $topMarge,
             ],
             'mouvements_7j' => $mouvements7j,
             'ca_7j_detail'  => $ca7jDetail,

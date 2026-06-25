@@ -32,6 +32,8 @@ export const authApi = {
   logout:  ()                                => api.post('/auth/logout'),
   me:      ()                                => api.get('/auth/me'),
   refresh: ()                                => api.post('/auth/refresh'),
+  verifyEmail: (email: string, code: string) => api.post('/auth/verify-email', { email, code }),
+  resendCode:  (email: string)               => api.post('/auth/resend-code', { email }),
 }
 
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
@@ -58,6 +60,32 @@ export const movementsApi = {
   create: (data: object)    => api.post('/movements', data),
 }
 
+// ─── Clients (comptes / crédit) ──────────────────────────────────────────────
+export const clientsApi = {
+  list:   (params?: object)            => api.get('/clients', { params }),
+  get:    (id: number)                 => api.get(`/clients/${id}`),
+  create: (data: object)               => api.post('/clients', data),
+  update: (id: number, data: object)   => api.patch(`/clients/${id}`, data),
+  pay:    (id: number, data: object)   => api.post(`/clients/${id}/pay`, data),
+  remind: (id: number)                 => api.post(`/clients/${id}/remind`),
+}
+
+// ─── Caisse (POS) ──────────────────────────────────────────────────────────────
+export const salesApi = {
+  list:   (params?: object) => api.get('/sales', { params }),
+  get:    (id: number)      => api.get(`/sales/${id}`),
+  create: (data: object)    => api.post('/sales', data),
+  cancel: (id: number)      => api.post(`/sales/${id}/cancel`),
+  export: (params?: object) => api.get('/sales/export', { params, responseType: 'blob' }),
+  invoice:(id: number)      => api.get(`/sales/${id}/invoice`, { responseType: 'blob' }),
+}
+
+// ─── Organisation (infos légales / facturation) ──────────────────────────────
+export const organisationApi = {
+  get:    ()            => api.get('/organisation'),
+  update: (data: object) => api.patch('/organisation', data),
+}
+
 // ─── Categories ───────────────────────────────────────────────────────────────
 export const categoriesApi = {
   list:    ()                          => api.get('/categories'),
@@ -80,6 +108,7 @@ export const alertsApi = {
   stock:       ()               => api.get('/alerts/stock'),
   suggestions: ()               => api.get('/alerts/suggestions'),
   anomalies:   (productId?: number) => api.get('/alerts/anomalies', { params: { product_id: productId } }),
+  notify:      ()               => api.post('/alerts/notify'),
 }
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────

@@ -115,8 +115,14 @@ class SeedAdminCommand extends Command
     {
         $email = env('SUPER_ADMIN_EMAIL', 'admin@stockpilot.tn');
 
+        // Only one super-admin is allowed on the whole platform.
+        if (User::where('role', 'super_admin')->exists()) {
+            $this->info('A super-admin already exists — skipping (only one allowed).');
+            return;
+        }
+
         if (User::where('email', $email)->exists()) {
-            $this->info("Super-admin {$email} already exists — skipping.");
+            $this->info("Email {$email} already used — skipping super-admin creation.");
             return;
         }
 

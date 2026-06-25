@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { guest: true },
     },
     {
+      path: '/verify-email',
+      name: 'verify-email',
+      component: () => import('@/views/VerifyEmailView.vue'),
+      meta: { guest: true },
+    },
+    {
       path: '/onboarding',
       name: 'onboarding',
       component: () => import('@/views/OnboardingView.vue'),
@@ -30,6 +36,9 @@ const router = createRouter({
         { path: '',         name: 'dashboard',  component: () => import('@/views/DashboardView.vue') },
         { path: 'products', name: 'products',   component: () => import('@/views/ProductsView.vue') },
         { path: 'products/:id', name: 'product-detail', component: () => import('@/views/ProductDetailView.vue') },
+        { path: 'caisse',    name: 'caisse',    component: () => import('@/views/CaisseView.vue') },
+        { path: 'ventes',    name: 'ventes',    component: () => import('@/views/VentesView.vue') },
+        { path: 'clients',   name: 'clients',   component: () => import('@/views/ClientsView.vue') },
         { path: 'movements', name: 'movements', component: () => import('@/views/MovementsView.vue') },
         { path: 'alerts',    name: 'alerts',    component: () => import('@/views/AlertsView.vue') },
         { path: 'config',    name: 'config',    component: () => import('@/views/ConfigView.vue') },
@@ -45,7 +54,7 @@ const router = createRouter({
 const superAdminRoutes = new Set(['super-admin', 'users'])
 
 // Routes tenant (catalogue, mouvements…) interdites au super_admin
-const tenantRoutes = new Set(['dashboard', 'products', 'product-detail', 'movements', 'alerts', 'config'])
+const tenantRoutes = new Set(['dashboard', 'products', 'caisse', 'ventes', 'clients', 'product-detail', 'movements', 'alerts', 'config'])
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()

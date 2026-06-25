@@ -40,6 +40,59 @@
       <KpiCard label="En alerte"           :value="kpis.total_alertes"         icon="⚠️" color="amber" />
     </div>
 
+    <!-- Caisse — ventes réelles -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-navy">Caisse</h3>
+        <RouterLink to="/app/ventes" class="text-gold text-xs font-medium hover:underline">Voir les ventes →</RouterLink>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div class="bg-gold/10 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-sm text-slate-500">CA caisse — aujourd'hui</span>
+          <span class="text-2xl font-bold text-gold">{{ formatCurrency(caisse.ca_jour) }}</span>
+          <span class="text-xs text-slate-400">{{ caisse.nb_jour }} vente(s)</span>
+        </div>
+        <div class="bg-navy/5 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-sm text-slate-500">CA caisse — ce mois</span>
+          <span class="text-2xl font-bold text-navy">{{ formatCurrency(caisse.ca_mois_ttc) }}</span>
+          <span class="text-xs text-slate-400">{{ caisse.nb_mois }} vente(s)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rentabilité (marge / bénéfice) -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold text-navy">Rentabilité — ce mois</h3>
+        <span class="text-xs text-slate-400">Marge = vente HT − coût d'achat</span>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-emerald-50 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-sm text-slate-500">Bénéfice (marge brute)</span>
+          <span class="text-2xl font-bold text-emerald-700">{{ formatCurrency(rentabilite.marge_mois) }}</span>
+          <span class="text-xs text-slate-400">sur {{ formatCurrency(rentabilite.ca_ht_mois) }} de ventes HT</span>
+        </div>
+        <div class="bg-amber-50 rounded-xl p-4 flex flex-col gap-1">
+          <span class="text-sm text-slate-500">Taux de marge</span>
+          <span class="text-2xl font-bold text-amber-600">{{ rentabilite.marge_pct }} %</span>
+          <span class="text-xs text-slate-400">marge / ventes HT</span>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-sm text-slate-500 mb-2">Produits les plus rentables</span>
+          <ul class="space-y-1">
+            <li v-for="p in rentabilite.top_produits" :key="p.nom"
+              class="flex items-center justify-between text-sm py-1 border-b border-slate-100 last:border-0">
+              <span class="text-slate-700 truncate pr-2">{{ p.nom }}</span>
+              <span class="text-emerald-600 font-semibold whitespace-nowrap">{{ formatCurrency(p.marge) }}</span>
+            </li>
+            <li v-if="rentabilite.top_produits.length === 0" class="text-slate-400 text-xs py-2">
+              Aucune vente ce mois.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
     <!-- AI Predictive KPIs (plan Pro/Enterprise) -->
     <div v-if="auth.hasAI && kpisIA" class="card">
       <div class="flex items-center gap-2 mb-4">
@@ -150,6 +203,8 @@ const auth   = useAuthStore()
 const alerts = useAlertsStore()
 
 const kpis         = ref<any>({})
+const caisse       = ref<any>({ ca_jour: 0, nb_jour: 0, ca_mois_ttc: 0, nb_mois: 0 })
+const rentabilite  = ref<any>({ ca_ht_mois: 0, marge_mois: 0, marge_pct: 0, top_produits: [] })
 const kpisIA       = ref<any[]|null>(null)
 const mouvements7j = ref<any[]>([])
 const ca7jDetail   = ref<any[]>([])
@@ -197,6 +252,8 @@ onMounted(async () => {
     alerts.fetchStockAlerts(),
   ])
   kpis.value         = dashRes.data.kpis
+  caisse.value       = dashRes.data.caisse ?? caisse.value
+  rentabilite.value  = dashRes.data.rentabilite ?? rentabilite.value
   mouvements7j.value = dashRes.data.mouvements_7j ?? []
   ca7jDetail.value   = dashRes.data.ca_7j_detail ?? []
   kpisIA.value       = dashRes.data.kpis_ia ?? null

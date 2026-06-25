@@ -5,12 +5,50 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\AIService;
+use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AlertController extends Controller
 {
     public function __construct(private AIService $aiService) {}
+
+    /** Envoie un récapitulatif des produits à réapprovisionner par WhatsApp. */
+    public function notifyStock(Request $request, WhatsAppService $wa): JsonResponse
+    {
+        $org   = app('current_user')->organisation;
+        $phone = $request->input('telephone') ?: $org->telephone;
+
+        if (! $phone) {
+            return $this->errorResponse(
+                'Aucun numéro de notification. Renseignez le téléphone dans Configuration.', 422
+            );
+        }
+
+        $produits = Product::whereRaw('quantite <= seuil_alerte')
+            ->where('actif', true)
+            ->orderBy('quantite')
+            ->limit(30)
+            ->get(['nom', 'quantite', 'unite_mesure']);
+
+        if ($produits->isEmpty()) {
+            return $this->errorResponse('Aucune alerte de stock à envoyer.', 422);
+        }
+
+        $liste = $produits
+            ->map(fn($p) => "• {$p->nom} : {$p->quantite} {$p->unite_mesure}")
+            ->implode("\n");
+
+        $message = str_replace(
+            [':org', ':liste'],
+            [$org->nom, $liste],
+            config('whatsapp.templates.stock'),
+        );
+
+        $result = $wa->send($phone, $message);
+
+        return response()->json($result + ['message_text' => $message, 'nb_produits' => $produits->count()]);
+    }
 
     public function stockAlerts(): JsonResponse
     {

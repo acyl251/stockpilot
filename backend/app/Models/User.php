@@ -5,17 +5,35 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use RuntimeException;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 class User extends Authenticatable implements JWTSubject
 {
     protected $table = 'users';
 
+    /**
+     * Enforce a single platform super-admin: reject creating a second one.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if ($user->role === 'super_admin'
+                && static::query()->where('role', 'super_admin')->exists()
+            ) {
+                throw new RuntimeException('Un compte super-admin existe déjà : un seul est autorisé sur la plateforme.');
+            }
+        });
+    }
+
     protected $fillable = [
         'organisation_id',
         'nom',
         'prenom',
         'email',
+        'email_verified_at',
+        'verification_code',
+        'verification_code_expires_at',
         'password',
         'role',
         'actif',
@@ -25,13 +43,22 @@ class User extends Authenticatable implements JWTSubject
 
     protected $hidden = [
         'password',
+        'verification_code',
     ];
 
     protected $casts = [
-        'actif'               => 'boolean',
-        'verrouille_jusqu_a'  => 'datetime',
-        'tentatives_connexion' => 'integer',
+        'actif'                        => 'boolean',
+        'verrouille_jusqu_a'           => 'datetime',
+        'email_verified_at'            => 'datetime',
+        'verification_code_expires_at' => 'datetime',
+        'tentatives_connexion'         => 'integer',
     ];
+
+    /** Un code en attente signifie que l'email n'est pas encore vérifié. */
+    public function needsEmailVerification(): bool
+    {
+        return ! is_null($this->verification_code);
+    }
 
     // JWT interface
     public function getJWTIdentifier(): mixed

@@ -10,6 +10,7 @@ use App\Models\StockMovement;
 use App\Models\Scopes\TenantScope;
 use App\Models\User;
 use App\Services\CatalogSeederService;
+use App\Services\VerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -18,7 +19,10 @@ use Illuminate\Support\Facades\Hash;
 
 class SuperAdminController extends Controller
 {
-    public function __construct(private CatalogSeederService $catalogSeeder) {}
+    public function __construct(
+        private CatalogSeederService $catalogSeeder,
+        private VerificationService $verification,
+    ) {}
 
     public function dashboard(): JsonResponse
     {
@@ -283,6 +287,10 @@ class SuperAdminController extends Controller
                 'actif'           => true,
             ]);
         });
+
+        // ── Vérification email : envoi du code de confirmation à l'admin ──────
+        $user->setRelation('organisation', $org);
+        $this->verification->issue($user);
 
         // ── 2. AI catalog seeding (outside the transaction) ───────────────────
         $seed = ['types' => 0, 'categories' => 0, 'products' => 0];
