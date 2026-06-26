@@ -32,8 +32,6 @@ export const authApi = {
   logout:  ()                                => api.post('/auth/logout'),
   me:      ()                                => api.get('/auth/me'),
   refresh: ()                                => api.post('/auth/refresh'),
-  verifyEmail: (email: string, code: string) => api.post('/auth/verify-email', { email, code }),
-  resendCode:  (email: string)               => api.post('/auth/resend-code', { email }),
 }
 
 // ─── Dashboard ─────────────────────────────────────────────────────────────────

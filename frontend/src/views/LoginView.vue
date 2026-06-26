@@ -62,11 +62,6 @@ async function submit() {
     await auth.login(form.value.email, form.value.password)
     router.push(auth.isSuperAdmin ? '/app/super-admin' : '/app')
   } catch (e: any) {
-    // Email non vérifié → redirection vers l'écran de saisie du code.
-    if (e.response?.status === 403 && e.response?.data?.verification_required) {
-      router.push({ name: 'verify-email', query: { email: e.response.data.email } })
-      return
-    }
     error.value = e.response?.data?.message ?? 'Erreur de connexion.'
   } finally {
     loading.value = false

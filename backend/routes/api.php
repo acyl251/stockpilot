@@ -17,9 +17,7 @@ use App\Http\Controllers\API\UserController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public ───────────────────────────────────────────────────────────────────
-Route::post('/auth/login',         [AuthController::class, 'login']);
-Route::post('/auth/verify-email',  [AuthController::class, 'verifyEmail']);
-Route::post('/auth/resend-code',   [AuthController::class, 'resendCode']);
+Route::post('/auth/login',    [AuthController::class, 'login']);
 Route::post('/demo-request',  [DemoRequestController::class, 'store']);
 Route::get('/plans',          [SuperAdminController::class, 'plans']);
 

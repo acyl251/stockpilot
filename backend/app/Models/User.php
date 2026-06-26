@@ -31,9 +31,6 @@ class User extends Authenticatable implements JWTSubject
         'nom',
         'prenom',
         'email',
-        'email_verified_at',
-        'verification_code',
-        'verification_code_expires_at',
         'password',
         'role',
         'actif',
@@ -43,22 +40,13 @@ class User extends Authenticatable implements JWTSubject
 
     protected $hidden = [
         'password',
-        'verification_code',
     ];
 
     protected $casts = [
-        'actif'                        => 'boolean',
-        'verrouille_jusqu_a'           => 'datetime',
-        'email_verified_at'            => 'datetime',
-        'verification_code_expires_at' => 'datetime',
-        'tentatives_connexion'         => 'integer',
+        'actif'                => 'boolean',
+        'verrouille_jusqu_a'   => 'datetime',
+        'tentatives_connexion' => 'integer',
     ];
-
-    /** Un code en attente signifie que l'email n'est pas encore vérifié. */
-    public function needsEmailVerification(): bool
-    {
-        return ! is_null($this->verification_code);
-    }
 
     // JWT interface
     public function getJWTIdentifier(): mixed

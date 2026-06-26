@@ -39,11 +39,6 @@ export const useAuthStore = defineStore('auth', () => {
     await setSession(data)
   }
 
-  async function verifyEmail(email: string, code: string) {
-    const { data } = await authApi.verifyEmail(email, code)
-    await setSession(data)
-  }
-
   async function fetchMe() {
     const { data } = await authApi.me()
     user.value = data
@@ -61,5 +56,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, login, verifyEmail, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, login, logout, fetchMe, initPromise }
 })
