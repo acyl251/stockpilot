@@ -14,7 +14,7 @@
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 px-4 py-6 space-y-1">
+    <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1">
       <SidebarLink v-for="item in navItems" :key="item.to"
         :to="item.to" :icon="item.icon" :label="item.label"
         :badge="item.badge" />
