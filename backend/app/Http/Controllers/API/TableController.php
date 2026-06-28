@@ -42,7 +42,14 @@ class TableController extends Controller
             'capacite' => 'nullable|integer|min:1|max:99',
         ]);
 
-        $table = RestaurantTable::create($validated);
+        try {
+            $table = RestaurantTable::create(array_merge($validated, [
+                'statut' => RestaurantTable::STATUT_LIBRE,
+                'active' => true,
+            ]));
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
 
         return response()->json($this->format($table), 201);
     }
