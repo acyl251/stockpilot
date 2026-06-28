@@ -318,9 +318,13 @@ function downloadQr() {
 async function loadOrg() {
   try {
     const { data } = await organisationApi.get()
+    console.log('[ConfigView] GET /organisation →', JSON.stringify({ secteur: data.secteur, nom: data.nom }))
     org.value = data
     await generateQr()
-  } catch { /* ignore */ }
+  } catch (e: any) {
+    console.error('[ConfigView] loadOrg() failed:', e?.response?.status, e?.response?.data ?? e?.message)
+    secteurError.value = `Erreur chargement organisation (${e?.response?.status ?? 'réseau'})`
+  }
 }
 
 async function saveSecteur() {

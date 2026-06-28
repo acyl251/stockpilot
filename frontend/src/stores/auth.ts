@@ -46,6 +46,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function fetchMe() {
     const { data } = await authApi.me()
     user.value = data
+    console.log('[auth] fetchMe → secteur:', data?.organisation?.secteur, '| isRestauration will be:', data?.organisation?.secteur === 'restauration')
   }
 
   async function logout() {
