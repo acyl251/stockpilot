@@ -69,6 +69,7 @@
               class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
           </div>
         </div>
+        <p v-if="tableModalError" class="px-5 pb-2 text-sm text-red-600">{{ tableModalError }}</p>
         <div class="flex gap-3 p-5 border-t">
           <button @click="showTableModal = false" class="flex-1 btn-secondary text-sm">Annuler</button>
           <button @click="saveTable" :disabled="!tableForm.numero || savingTable"
@@ -402,9 +403,10 @@ const products        = ref<Product[]>([])
 const supplements     = ref<Supplement[]>([])
 const loadingProducts = ref(false)
 
-const showTableModal = ref(false)
-const tableForm      = ref({ numero: '', capacite: null as number | null })
-const savingTable    = ref(false)
+const showTableModal  = ref(false)
+const tableForm       = ref({ numero: '', capacite: null as number | null })
+const savingTable     = ref(false)
+const tableModalError = ref('')
 
 const showOrderModal   = ref(false)
 const orderTable       = ref<RestaurantTable | null>(null)
@@ -467,18 +469,29 @@ async function fetchMenuItems() {
 
 // ─── Table creation ───────────────────────────────────────────────────────────
 function openTableModal() {
-  tableForm.value = { numero: '', capacite: null }
-  showTableModal.value = true
+  tableForm.value    = { numero: '', capacite: null }
+  tableModalError.value = ''
+  showTableModal.value  = true
 }
 
 async function saveTable() {
   if (!tableForm.value.numero) return
-  savingTable.value = true
+  savingTable.value     = true
+  tableModalError.value = ''
   try {
     await tablesApi.create(tableForm.value)
     showTableModal.value = false
     await fetchTables()
-  } finally { savingTable.value = false }
+  } catch (e: any) {
+    const data = e.response?.data
+    tableModalError.value =
+      data?.errors?.numero?.[0] ??
+      data?.message ??
+      'Erreur lors de la création de la table.'
+    console.error('[saveTable]', data ?? e)
+  } finally {
+    savingTable.value = false
+  }
 }
 
 // ─── Order modal ──────────────────────────────────────────────────────────────
