@@ -27,6 +27,16 @@ class SeedAdminCommand extends Command
     {
         $this->seedSuperAdmin();
 
+        // Normalize any invalid secteur values on every deploy (runs after migrations).
+        // Needed because the first migration ran when organisations was empty,
+        // then the seeder created the org with 'Commerce de détail' (now fixed below too).
+        $fixed = Organisation::whereNotIn('secteur', ['commerce', 'restauration'])
+            ->orWhereNull('secteur')
+            ->update(['secteur' => 'restauration']);
+        if ($fixed > 0) {
+            $this->info("Normalized {$fixed} organisation(s) secteur → 'restauration'.");
+        }
+
         if (User::where('email', 'admin@test.tn')->exists()) {
             $this->info('Demo admin already exists — skipping demo data.');
             return self::SUCCESS;
@@ -41,7 +51,7 @@ class SeedAdminCommand extends Command
         $org = Organisation::create([
             'plan_id'             => $plan->id,
             'nom'                 => 'Entreprise Test SARL',
-            'secteur'             => 'Commerce de détail',
+            'secteur'             => 'restauration',
             'email_contact'       => 'contact@test.tn',
             'telephone'           => '+216 71 000 000',
             'onboarding_complete' => true,
