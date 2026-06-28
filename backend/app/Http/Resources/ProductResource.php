@@ -26,7 +26,21 @@ class ProductResource extends JsonResource
             'statut'         => $this->statut,
             'en_alerte'      => $this->en_alerte,
             'en_rupture'     => $this->en_rupture,
+            'type'           => $this->type ?? 'simple',
             'actif'          => (bool) $this->actif,
+            'composition'    => $this->whenLoaded('composition', fn() =>
+                $this->composition->map(fn($c) => [
+                    'id'           => $c->id,
+                    'composant_id' => $c->composant_id,
+                    'composant'    => $c->relationLoaded('composant') ? [
+                        'id'          => $c->composant->id,
+                        'nom'         => $c->composant->nom,
+                        'unite_mesure'=> $c->composant->unite_mesure,
+                    ] : null,
+                    'quantite'     => (float) $c->quantite,
+                    'unite'        => $c->unite,
+                ])
+            ),
             'category'       => $this->whenLoaded('category', fn() => [
                 'id'      => $this->category->id,
                 'nom'     => $this->category->nom,

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\Product;
+use App\Models\RestaurantTable;
 use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\StockMovement;
 use App\Services\AIService;
 use Illuminate\Http\JsonResponse;
@@ -21,9 +24,9 @@ class DashboardController extends Controller
 
         // Real-time KPIs
         $totalProduits   = Product::where('actif', true)->count();
-        $totalRuptures   = Product::where('quantite', '<=', 0)->where('actif', true)->count();
+        $totalRuptures   = Product::where('quantite', '<=', 0)->where('actif', true)->where('type', '!=', 'compose')->count();
         $totalAlertes    = Product::whereRaw('quantite > 0 AND quantite <= seuil_alerte')
-            ->where('actif', true)->count();
+            ->where('actif', true)->where('type', '!=', 'compose')->count();
 
         $valeurStock = Product::where('actif', true)
             ->selectRaw('SUM(quantite * prix_achat_ht) as total')
@@ -141,6 +144,22 @@ class DashboardController extends Controller
             'ca_7j_detail'  => $ca7jDetail,
         ];
 
+        // ── Stats restauration ───────────────────────────────────────────────
+        if ($org->isRestauration()) {
+            $response['restauration'] = [
+                'tables_occupees'       => RestaurantTable::where('statut', 'occupee')->where('active', true)->count(),
+                'commandes_en_attente'  => Order::where('statut', Order::STATUT_ENVOYEE)->count(),
+                'ca_tables_jour'        => round((float) Sale::where('type_commande', 'sur_place')
+                    ->where('statut', '!=', Sale::STATUT_ANNULEE)
+                    ->whereDate('date_vente', today())
+                    ->sum('total_ttc'), 3),
+                'ca_emporter_jour'      => round((float) Sale::where('type_commande', 'emporter')
+                    ->where('statut', '!=', Sale::STATUT_ANNULEE)
+                    ->whereDate('date_vente', today())
+                    ->sum('total_ttc'), 3),
+            ];
+        }
+
         // Welcome banner — catalog was pre-filled by AI at org creation
         if (($org->ia_catalog_seeded_count ?? 0) > 0) {
             $response['bienvenue_ia'] = [
@@ -162,6 +181,89 @@ class DashboardController extends Controller
         }
 
         return response()->json($response);
+    }
+
+    public function restaurant(): JsonResponse
+    {
+        $org = app('current_user')->organisation;
+        if (! $org->isRestauration()) {
+            return response()->json(['message' => 'Réservé au secteur restauration.'], 403);
+        }
+
+        // Bloc 1 — Situation temps réel
+        $totalTables     = RestaurantTable::where('active', true)->count();
+        $tablesOccupees  = RestaurantTable::where('active', true)->where('statut', 'occupee')->count();
+        $commandesEnAtt  = Order::where('statut', Order::STATUT_ENVOYEE)->count();
+        $caJour          = round((float) Sale::where('statut', '!=', Sale::STATUT_ANNULEE)
+            ->whereDate('date_vente', today())->sum('total_ttc'), 3);
+
+        // Bloc 2 — Top 5 plats du jour
+        $top5Plats = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->where('sales.statut', '!=', Sale::STATUT_ANNULEE)
+            ->whereDate('sales.date_vente', today())
+            ->groupBy('sale_items.designation')
+            ->selectRaw('sale_items.designation as nom, SUM(sale_items.quantite) as qte, SUM(sale_items.total_ligne_ttc) as ca')
+            ->orderByDesc('qte')
+            ->limit(5)
+            ->get()
+            ->map(fn ($r) => [
+                'nom' => $r->nom,
+                'qte' => (int) $r->qte,
+                'ca'  => round((float) $r->ca, 3),
+            ]);
+
+        // Bloc 3 — CA par service (PHP-side filtering for DB compat)
+        $ventesJour = Sale::where('statut', '!=', Sale::STATUT_ANNULEE)
+            ->whereDate('date_vente', today())
+            ->get(['total_ttc', 'date_vente']);
+
+        $caMidi  = round((float) $ventesJour->filter(fn ($s) => $s->date_vente->hour >= 11 && $s->date_vente->hour < 15)->sum('total_ttc'), 3);
+        $caSoir  = round((float) $ventesJour->filter(fn ($s) => $s->date_vente->hour >= 18 && $s->date_vente->hour < 23)->sum('total_ttc'), 3);
+        $caAutre = round((float) $caJour - $caMidi - $caSoir, 3);
+
+        $nbMidi  = $ventesJour->filter(fn ($s) => $s->date_vente->hour >= 11 && $s->date_vente->hour < 15)->count();
+        $nbSoir  = $ventesJour->filter(fn ($s) => $s->date_vente->hour >= 18 && $s->date_vente->hour < 23)->count();
+        $nbAutre = $ventesJour->count() - $nbMidi - $nbSoir;
+
+        // Bloc 4 — Ingrédients à risque (stock pour < 3 jours)
+        $conso7j = StockMovement::where('stock_movements.type_mouvement', 'sortie')
+            ->where('stock_movements.date_mouvement', '>=', now()->subDays(7))
+            ->join('products', 'stock_movements.product_id', '=', 'products.id')
+            ->where('products.type', '!=', 'compose')
+            ->groupBy('stock_movements.product_id', 'products.nom', 'products.quantite', 'products.unite_mesure')
+            ->selectRaw('stock_movements.product_id, products.nom, products.quantite as stock, products.unite_mesure as unite, SUM(stock_movements.quantite) as total_7j')
+            ->get();
+
+        $alertesIngredients = $conso7j->map(function ($row) {
+            $avg    = (float) $row->total_7j / 7;
+            $stock  = (float) $row->stock;
+            $jours  = $avg > 0 ? round($stock / $avg, 1) : 999.0;
+            return [
+                'nom'            => $row->nom,
+                'unite'          => $row->unite,
+                'stock_actuel'   => round($stock, 3),
+                'conso_jour'     => round($avg, 3),
+                'jours_restants' => $jours,
+            ];
+        })->filter(fn ($r) => $r['jours_restants'] < 3)
+          ->sortBy('jours_restants')
+          ->values();
+
+        return response()->json([
+            'situation' => [
+                'tables_occupees'    => $tablesOccupees,
+                'tables_total'       => $totalTables,
+                'commandes_en_attente' => $commandesEnAtt,
+                'ca_jour'            => $caJour,
+            ],
+            'top_plats' => $top5Plats,
+            'ca_service' => [
+                'midi'  => ['ca' => $caMidi, 'nb' => $nbMidi],
+                'soir'  => ['ca' => $caSoir, 'nb' => $nbSoir],
+                'autre' => ['ca' => $caAutre, 'nb' => $nbAutre],
+            ],
+            'alertes_ingredients' => $alertesIngredients,
+        ]);
     }
 
     public function forecast(int $productId): JsonResponse

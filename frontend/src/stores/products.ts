@@ -17,6 +17,7 @@ export interface Product {
   statut: 'En stock' | 'Alerte' | 'Rupture'
   en_alerte: boolean
   en_rupture: boolean
+  type: 'simple' | 'compose'
   actif: boolean
   attributs: Record<string, unknown>
   category?: { id: number; nom: string; couleur: string }
@@ -25,6 +26,7 @@ export interface Product {
 
 export const useProductsStore = defineStore('products', () => {
   const products    = ref<Product[]>([])
+  const allProducts = ref<Product[]>([])  // flat unpaginated list for pickers
   const categories  = ref<any[]>([])
   const types       = ref<any[]>([])
   const loading     = ref(false)
@@ -43,6 +45,11 @@ export const useProductsStore = defineStore('products', () => {
     } finally {
       loading.value = false
     }
+  }
+
+  async function fetchAllProducts() {
+    const { data } = await productsApi.list({ per_page: 500, actif: 1 })
+    allProducts.value = data.data
   }
 
   async function fetchCategories() {
@@ -74,8 +81,8 @@ export const useProductsStore = defineStore('products', () => {
   }
 
   return {
-    products, categories, types, loading, pagination,
-    fetchProducts, fetchCategories, fetchTypes,
+    products, allProducts, categories, types, loading, pagination,
+    fetchProducts, fetchAllProducts, fetchCategories, fetchTypes,
     createProduct, updateProduct, deleteProduct,
   }
 })

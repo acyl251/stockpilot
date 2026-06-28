@@ -48,7 +48,7 @@
           <tr v-for="p in store.products" :key="p.id"
             class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
             <td class="px-4 py-3 font-medium text-navy">{{ p.nom }}</td>
-            <td class="px-4 py-3 text-slate-500 font-mono text-xs">{{ p.reference }}</td>
+            <td class="px-4 py-3 text-slate-500 font-mono text-xs">{{ p.reference || '—' }}</td>
             <td class="px-4 py-3">
               <span v-if="p.category" class="px-2 py-0.5 rounded-full text-xs font-medium text-white"
                 :style="{ backgroundColor: p.category.couleur }">
@@ -61,12 +61,18 @@
             </td>
             <td class="px-4 py-3 text-right text-slate-600">{{ p.prix_achat_ht.toFixed(3) }} TND</td>
             <td class="px-4 py-3 text-center">
-              <span :class="['badge-stock px-2 py-0.5 rounded-full text-xs font-semibold',
-                p.en_rupture ? 'bg-red-100 text-red-700' :
-                p.en_alerte  ? 'bg-amber-100 text-amber-700' :
-                               'bg-emerald-100 text-emerald-700']">
-                {{ p.statut }}
-              </span>
+              <div class="flex flex-col items-center gap-1">
+                <span :class="['badge-stock px-2 py-0.5 rounded-full text-xs font-semibold',
+                  p.en_rupture ? 'bg-red-100 text-red-700' :
+                  p.en_alerte  ? 'bg-amber-100 text-amber-700' :
+                  p.type === 'compose' ? 'bg-purple-100 text-purple-700' :
+                                         'bg-emerald-100 text-emerald-700']">
+                  {{ p.statut }}
+                </span>
+                <span v-if="(p.attributs as any)?.conservation" class="text-xs text-slate-400">
+                  {{ ({ ambiant: '🌡 Ambiant', refrigere: '❄ Réfrigéré', congele: '🧊 Congelé' } as Record<string,string>)[(p.attributs as any).conservation] }}
+                </span>
+              </div>
             </td>
             <td class="px-4 py-3">
               <div class="flex items-center justify-end gap-3">

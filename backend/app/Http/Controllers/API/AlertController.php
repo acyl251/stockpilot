@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\CommandeFournisseurItem;
 use App\Models\Product;
 use App\Services\AIService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AlertController extends Controller
 {
@@ -27,6 +29,7 @@ class AlertController extends Controller
 
         $produits = Product::whereRaw('quantite <= seuil_alerte')
             ->where('actif', true)
+            ->where('type', '!=', 'compose')
             ->orderBy('quantite')
             ->limit(30)
             ->get(['nom', 'quantite', 'unite_mesure']);
@@ -53,11 +56,13 @@ class AlertController extends Controller
     public function stockAlerts(): JsonResponse
     {
         $ruptures = Product::where('quantite', '<=', 0)->where('actif', true)
+            ->where('type', '!=', 'compose')
             ->with('category')
             ->get(['id', 'nom', 'reference', 'quantite', 'seuil_alerte', 'unite_mesure', 'category_id']);
 
         $alertes = Product::whereRaw('quantite > 0 AND quantite <= seuil_alerte')
             ->where('actif', true)
+            ->where('type', '!=', 'compose')
             ->with('category')
             ->get(['id', 'nom', 'reference', 'quantite', 'seuil_alerte', 'unite_mesure', 'category_id']);
 
@@ -83,6 +88,58 @@ class AlertController extends Controller
         $suggestions = $this->aiService->suggestReorder($products->toArray());
 
         return response()->json(['suggestions' => $suggestions]);
+    }
+
+    /**
+     * Products below alert threshold with their last-used supplier.
+     */
+    public function commandesSuggerees(): JsonResponse
+    {
+        $orgId = app('current_organisation_id');
+
+        // Products below threshold
+        $produits = Product::whereRaw('quantite <= seuil_alerte')
+            ->where('actif', true)
+            ->where('type', '!=', 'compose')
+            ->get(['id', 'nom', 'quantite', 'seuil_alerte', 'unite_mesure']);
+
+        if ($produits->isEmpty()) {
+            return response()->json([]);
+        }
+
+        // Last supplier per product (most recent commande_fournisseur with that product)
+        $productIds = $produits->pluck('id');
+
+        $lastSuppliers = CommandeFournisseurItem::join('commandes_fournisseur', 'commandes_fournisseur_items.commande_id', '=', 'commandes_fournisseur.id')
+            ->join('fournisseurs', 'commandes_fournisseur.fournisseur_id', '=', 'fournisseurs.id')
+            ->where('commandes_fournisseur.organisation_id', $orgId)
+            ->whereIn('commandes_fournisseur_items.product_id', $productIds)
+            ->select(
+                'commandes_fournisseur_items.product_id',
+                'fournisseurs.id as fournisseur_id',
+                'fournisseurs.nom as fournisseur_nom',
+                DB::raw('MAX(commandes_fournisseur.date_commande) as last_date'),
+            )
+            ->groupBy('commandes_fournisseur_items.product_id', 'fournisseurs.id', 'fournisseurs.nom')
+            ->orderByDesc('last_date')
+            ->get()
+            ->keyBy('product_id');
+
+        $result = $produits->map(function (Product $p) use ($lastSuppliers) {
+            $supplier = $lastSuppliers->get($p->id);
+            return [
+                'product_id'   => $p->id,
+                'nom'          => $p->nom,
+                'quantite'     => (float) $p->quantite,
+                'seuil_alerte' => (float) $p->seuil_alerte,
+                'unite'        => $p->unite_mesure,
+                'fournisseur'  => $supplier
+                    ? ['id' => $supplier->fournisseur_id, 'nom' => $supplier->fournisseur_nom]
+                    : null,
+            ];
+        });
+
+        return response()->json($result->values());
     }
 
     public function anomalies(Request $request): JsonResponse

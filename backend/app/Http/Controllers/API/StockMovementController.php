@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\StockMovementResource;
 use App\Models\StockMovement;
+use App\Services\ActivityLogService;
 use App\Services\StockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,7 +46,17 @@ class StockMovementController extends Controller
             dateMouvement:  $validated['date_mouvement'] ?? null,
         );
 
-        return response()->json(new StockMovementResource($movement->load(['product', 'user'])), 201);
+        $movement->load(['product', 'user']);
+        $produit = $movement->product->nom ?? '?';
+        $unite   = $movement->product->unite_mesure ?? '';
+        $signe   = $validated['type_mouvement'] === 'entree' ? '+' : '-';
+        $verb    = $validated['type_mouvement'] === 'entree' ? 'Entrée stock' : 'Sortie stock';
+
+        ActivityLogService::log('created', 'stock',
+            "{$verb} : {$signe}{$validated['quantite']} {$unite} de '{$produit}'"
+        );
+
+        return response()->json(new StockMovementResource($movement), 201);
     }
 
     public function show(int $id): JsonResponse

@@ -36,8 +36,9 @@ export const authApi = {
 
 // ─── Dashboard ─────────────────────────────────────────────────────────────────
 export const dashboardApi = {
-  index:    ()                 => api.get('/dashboard'),
-  forecast: (productId: number) => api.get(`/dashboard/forecast/${productId}`),
+  index:      ()                   => api.get('/dashboard'),
+  forecast:   (productId: number)  => api.get(`/dashboard/forecast/${productId}`),
+  restaurant: ()                   => api.get('/dashboard/restaurant'),
 }
 
 // ─── Products ─────────────────────────────────────────────────────────────────
@@ -70,18 +71,27 @@ export const clientsApi = {
 
 // ─── Caisse (POS) ──────────────────────────────────────────────────────────────
 export const salesApi = {
-  list:   (params?: object) => api.get('/sales', { params }),
-  get:    (id: number)      => api.get(`/sales/${id}`),
-  create: (data: object)    => api.post('/sales', data),
-  cancel: (id: number)      => api.post(`/sales/${id}/cancel`),
-  export: (params?: object) => api.get('/sales/export', { params, responseType: 'blob' }),
-  invoice:(id: number)      => api.get(`/sales/${id}/invoice`, { responseType: 'blob' }),
+  list:             (params?: object) => api.get('/sales', { params }),
+  get:              (id: number)      => api.get(`/sales/${id}`),
+  create:           (data: object)    => api.post('/sales', data),
+  cancel:           (id: number)      => api.post(`/sales/${id}/cancel`),
+  export:           (params?: object) => api.get('/sales/export', { params, responseType: 'blob' }),
+  invoice:          (id: number)      => api.get(`/sales/${id}/invoice`, { responseType: 'blob' }),
+  checkIngredients: (data: object)    => api.post('/sales/check-ingredients', data),
 }
 
 // ─── Organisation (infos légales / facturation) ──────────────────────────────
 export const organisationApi = {
   get:    ()            => api.get('/organisation'),
   update: (data: object) => api.patch('/organisation', data),
+}
+
+// ─── Recettes / Fiches techniques (restauration) ──────────────────────────────
+export const compositionApi = {
+  list:    (productId: number)                          => api.get(`/products/${productId}/composition`),
+  add:     (productId: number, data: object)            => api.post(`/products/${productId}/composition`, data),
+  update:  (productId: number, lineId: number, data: object) => api.patch(`/products/${productId}/composition/${lineId}`, data),
+  remove:  (productId: number, lineId: number)          => api.delete(`/products/${productId}/composition/${lineId}`),
 }
 
 // ─── Categories ───────────────────────────────────────────────────────────────
@@ -103,10 +113,11 @@ export const productTypesApi = {
 
 // ─── Alerts ────────────────────────────────────────────────────────────────────
 export const alertsApi = {
-  stock:       ()               => api.get('/alerts/stock'),
-  suggestions: ()               => api.get('/alerts/suggestions'),
-  anomalies:   (productId?: number) => api.get('/alerts/anomalies', { params: { product_id: productId } }),
-  notify:      ()               => api.post('/alerts/notify'),
+  stock:               ()               => api.get('/alerts/stock'),
+  suggestions:         ()               => api.get('/alerts/suggestions'),
+  anomalies:           (productId?: number) => api.get('/alerts/anomalies', { params: { product_id: productId } }),
+  notify:              ()               => api.post('/alerts/notify'),
+  commandesSuggerees:  ()               => api.get('/alerts/commandes-suggerees'),
 }
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────
@@ -114,6 +125,38 @@ export const onboardingApi = {
   suggest:         (secteur: string)                          => api.post('/onboarding/suggest', { secteur }),
   suggestProducts: (secteur: string)                          => api.post('/onboarding/suggest-products', { secteur }),
   confirm:         (types: object[], products: object[] = []) => api.post('/onboarding/confirm', { types, products }),
+}
+
+// ─── Tables & Commandes (restauration) ───────────────────────────────────────
+export const tablesApi = {
+  list:    ()                          => api.get('/tables'),
+  create:  (data: object)              => api.post('/tables', data),
+  update:  (id: number, data: object)  => api.patch(`/tables/${id}`, data),
+  destroy: (id: number)                => api.delete(`/tables/${id}`),
+}
+
+export const ordersApi = {
+  list:             (params?: object)           => api.get('/orders', { params }),
+  get:              (id: number)                => api.get(`/orders/${id}`),
+  create:           (data: object)              => api.post('/orders', data),
+  updateItems:      (id: number, data: object)  => api.patch(`/orders/${id}/items`, data),
+  checkIngredients: (id: number)                => api.get(`/orders/${id}/check-ingredients`),
+  sendKitchen:      (id: number, data?: object) => api.post(`/orders/${id}/send-kitchen`, data ?? {}),
+  pay:              (id: number, data?: object) => api.post(`/orders/${id}/pay`, data ?? {}),
+}
+
+// ─── Consommation ingrédients (restauration) ─────────────────────────────────
+export const consommationApi = {
+  index:  (params?: object) => api.get('/consommation', { params }),
+  export: (params?: object) => api.get('/consommation/export', { params, responseType: 'blob' }),
+}
+
+// ─── Suppléments (restauration) ───────────────────────────────────────────────
+export const supplementsApi = {
+  list:    ()                          => api.get('/supplements'),
+  create:  (data: object)              => api.post('/supplements', data),
+  update:  (id: number, data: object)  => api.patch(`/supplements/${id}`, data),
+  destroy: (id: number)                => api.delete(`/supplements/${id}`),
 }
 
 // ─── Users ────────────────────────────────────────────────────────────────────
@@ -135,8 +178,33 @@ export const superAdminApi = {
   updateDemoStatus:   (id: number, statut: string) => api.patch(`/super-admin/demo-requests/${id}`, { statut }),
 }
 
+// ─── Fournisseurs ─────────────────────────────────────────────────────────────
+export const fournisseursApi = {
+  list:    ()                          => api.get('/fournisseurs'),
+  create:  (data: object)              => api.post('/fournisseurs', data),
+  update:  (id: number, data: object)  => api.patch(`/fournisseurs/${id}`, data),
+  destroy: (id: number)                => api.delete(`/fournisseurs/${id}`),
+}
+
+export const commandesFournisseurApi = {
+  list:          (params?: object)           => api.get('/commandes-fournisseur', { params }),
+  get:           (id: number)                => api.get(`/commandes-fournisseur/${id}`),
+  create:        (data: object)              => api.post('/commandes-fournisseur', data),
+  update:        (id: number, data: object)  => api.patch(`/commandes-fournisseur/${id}`, data),
+  envoyer:       (id: number)                => api.post(`/commandes-fournisseur/${id}/envoyer`),
+  receptionner:  (id: number, data: object)  => api.post(`/commandes-fournisseur/${id}/receptionner`, data),
+  destroy:       (id: number)                => api.delete(`/commandes-fournisseur/${id}`),
+}
+
+// ─── Activity Logs ─────────────────────────────────────────────────────────────
+export const activityLogsApi = {
+  list:   (params?: object) => api.get('/activity-logs', { params }),
+  export: (params?: object) => api.get('/activity-logs/export', { params, responseType: 'blob' }),
+}
+
 // ─── Public ────────────────────────────────────────────────────────────────────
 export const publicApi = {
   sendDemoRequest: (data: object) => api.post('/demo-request', data),
   getPlans:        ()             => api.get('/plans'),
+  menu:            (slug: string) => api.get(`/public/menu/${slug}`),
 }

@@ -23,9 +23,13 @@ class Product extends BaseModel
         'prix_achat_ht',
         'taux_tva',
         'prix_vente_ht',
+        'type',
         'attributs',
         'actif',
     ];
+
+    const TYPE_SIMPLE  = 'simple';
+    const TYPE_COMPOSE = 'compose';
 
     protected $casts = [
         'quantite'       => 'decimal:3',
@@ -52,16 +56,19 @@ class Product extends BaseModel
 
     public function getEnAlerteAttribute(): bool
     {
+        if ($this->isCompose()) return false;
         return $this->quantite > 0 && $this->quantite <= $this->seuil_alerte;
     }
 
     public function getEnRuptureAttribute(): bool
     {
+        if ($this->isCompose()) return false;
         return $this->quantite <= 0;
     }
 
     public function getStatutAttribute(): string
     {
+        if ($this->isCompose()) return 'Composé';
         if ($this->en_rupture) return 'Rupture';
         if ($this->en_alerte)  return 'Alerte';
         return 'En stock';
@@ -80,5 +87,16 @@ class Product extends BaseModel
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);
+    }
+
+    /** Lignes de recette (ce produit composé = somme de ses ingrédients). */
+    public function composition(): HasMany
+    {
+        return $this->hasMany(Composition::class, 'produit_compose_id');
+    }
+
+    public function isCompose(): bool
+    {
+        return $this->type === self::TYPE_COMPOSE;
     }
 }

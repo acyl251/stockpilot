@@ -13,6 +13,9 @@ interface User {
     id: number
     nom: string
     secteur: string
+    slug?: string
+    adresse?: string
+    telephone?: string
     onboarding_complete: boolean
     plan: { ia_activee: boolean }
   }
@@ -22,10 +25,11 @@ export const useAuthStore = defineStore('auth', () => {
   const user          = ref<User | null>(null)
   const accessToken   = ref<string | null>(localStorage.getItem('access_token'))
 
-  const isAuthenticated = computed(() => !!accessToken.value)
-  const hasAI           = computed(() => user.value?.organisation?.plan?.ia_activee ?? false)
-  const isAdmin         = computed(() => ['admin', 'super_admin'].includes(user.value?.role ?? ''))
-  const isSuperAdmin    = computed(() => user.value?.role === 'super_admin')
+  const isAuthenticated  = computed(() => !!accessToken.value)
+  const hasAI            = computed(() => user.value?.organisation?.plan?.ia_activee ?? false)
+  const isAdmin          = computed(() => ['admin', 'super_admin'].includes(user.value?.role ?? ''))
+  const isSuperAdmin     = computed(() => user.value?.role === 'super_admin')
+  const isRestauration   = computed(() => user.value?.organisation?.secteur === 'restauration')
 
   async function setSession(data: any) {
     accessToken.value = data.access_token
@@ -56,5 +60,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, login, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, isRestauration, login, logout, fetchMe, initPromise }
 })

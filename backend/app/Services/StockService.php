@@ -19,10 +19,13 @@ class StockService
         float   $quantite,
         ?string $note          = null,
         ?string $dateMouvement = null,
+        bool    $enforceStock  = true,
     ): StockMovement {
         $product = Product::lockForUpdate()->findOrFail($productId);
 
-        if ($type === StockMovement::TYPE_SORTIE && $product->quantite < $quantite) {
+        // $enforceStock = false → on autorise le sur-débit (ex : ingrédients d'une
+        // recette) sans bloquer la vente ; la quantité reste plancher à 0.
+        if ($enforceStock && $type === StockMovement::TYPE_SORTIE && $product->quantite < $quantite) {
             throw ValidationException::withMessages([
                 'quantite' => "Stock insuffisant. Disponible: {$product->quantite} {$product->unite_mesure}.",
             ]);
@@ -65,6 +68,7 @@ class StockService
     {
         return Product::whereRaw('quantite <= seuil_alerte')
             ->where('actif', true)
+            ->where('type', '!=', 'compose')
             ->with('category')
             ->orderBy('quantite')
             ->get();

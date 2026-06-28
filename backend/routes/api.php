@@ -1,10 +1,19 @@
 <?php
 
+use App\Http\Controllers\API\ActivityLogController;
 use App\Http\Controllers\API\AlertController;
+use App\Http\Controllers\API\CommandeFournisseurController;
+use App\Http\Controllers\API\ConsommationController;
+use App\Http\Controllers\API\FournisseurController;
+use App\Http\Controllers\API\PublicMenuController;
+use App\Http\Controllers\API\OrderController;
+use App\Http\Controllers\API\SupplementController;
+use App\Http\Controllers\API\TableController;
 use App\Http\Controllers\API\SuperAdminController;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\ClientController;
+use App\Http\Controllers\API\CompositionController;
 use App\Http\Controllers\API\DashboardController;
 use App\Http\Controllers\API\DemoRequestController;
 use App\Http\Controllers\API\OnboardingController;
@@ -20,6 +29,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/auth/login',    [AuthController::class, 'login']);
 Route::post('/demo-request',  [DemoRequestController::class, 'store']);
 Route::get('/plans',          [SuperAdminController::class, 'plans']);
+Route::get('/public/menu/{slug}', [PublicMenuController::class, 'show']);
 
 // ─── Authenticated Tenant Routes ──────────────────────────────────────────────
 Route::middleware('auth.tenant')->group(function () {
@@ -34,6 +44,7 @@ Route::middleware('auth.tenant')->group(function () {
     // Dashboard
     Route::get('/dashboard',                    [DashboardController::class, 'index']);
     Route::get('/dashboard/forecast/{product}', [DashboardController::class, 'forecast']);
+    Route::get('/dashboard/restaurant',         [DashboardController::class, 'restaurant']);
 
     // Onboarding (AI-assisted setup)
     Route::post('/onboarding/suggest',          [OnboardingController::class, 'suggest']);
@@ -48,6 +59,36 @@ Route::middleware('auth.tenant')->group(function () {
     // Specific route must be declared BEFORE the resource so it isn't captured by products/{product}.
     Route::get('/products/check-reference', [ProductController::class, 'checkReference']);
     Route::apiResource('products', ProductController::class);
+
+    // Tables & Commandes (secteur restauration uniquement)
+    Route::get('/tables',                       [TableController::class, 'index']);
+    Route::post('/tables',                      [TableController::class, 'store']);
+    Route::patch('/tables/{id}',                [TableController::class, 'update']);
+    Route::delete('/tables/{id}',               [TableController::class, 'destroy']);
+
+    Route::get('/orders',                       [OrderController::class, 'index']);
+    Route::post('/orders',                      [OrderController::class, 'store']);
+    Route::get('/orders/{id}',                  [OrderController::class, 'show']);
+    Route::patch('/orders/{id}/items',          [OrderController::class, 'updateItems']);
+    Route::post('/orders/{id}/send-kitchen',    [OrderController::class, 'sendKitchen']);
+    Route::post('/orders/{id}/pay',             [OrderController::class, 'pay']);
+    Route::get('/orders/{id}/check-ingredients', [OrderController::class, 'checkIngredients']);
+
+    // Suppléments (secteur restauration uniquement)
+    Route::get('/supplements',      [SupplementController::class, 'index']);
+    Route::post('/supplements',     [SupplementController::class, 'store']);
+    Route::patch('/supplements/{id}', [SupplementController::class, 'update']);
+    Route::delete('/supplements/{id}', [SupplementController::class, 'destroy']);
+
+    // Consommation ingrédients (restauration)
+    Route::get('/consommation',        [ConsommationController::class, 'index']);
+    Route::get('/consommation/export', [ConsommationController::class, 'export']);
+
+    // Recettes / Fiches techniques (secteur restauration uniquement)
+    Route::get('/products/{product}/composition',              [CompositionController::class, 'index']);
+    Route::post('/products/{product}/composition',             [CompositionController::class, 'store']);
+    Route::patch('/products/{product}/composition/{composition}', [CompositionController::class, 'update']);
+    Route::delete('/products/{product}/composition/{composition}', [CompositionController::class, 'destroy']);
 
     // Stock Movements
     Route::get('/movements',      [StockMovementController::class, 'index']);
@@ -67,20 +108,41 @@ Route::middleware('auth.tenant')->group(function () {
     Route::patch('/organisation', [OrganisationController::class, 'update']);
 
     // Caisse (POS)
-    Route::get('/sales',              [SaleController::class, 'index']);
-    Route::get('/sales/export',       [SaleController::class, 'export']);
-    Route::post('/sales',             [SaleController::class, 'store']);
+    Route::get('/sales',                        [SaleController::class, 'index']);
+    Route::get('/sales/export',                 [SaleController::class, 'export']);
+    Route::post('/sales/check-ingredients',     [SaleController::class, 'checkIngredients']);
+    Route::post('/sales',                       [SaleController::class, 'store']);
     Route::get('/sales/{id}',         [SaleController::class, 'show']);
     Route::get('/sales/{id}/invoice', [SaleController::class, 'invoice']);
     Route::post('/sales/{id}/cancel', [SaleController::class, 'cancel']);
 
     // Alerts & AI
     Route::prefix('alerts')->group(function () {
-        Route::get('stock',       [AlertController::class, 'stockAlerts']);
-        Route::get('suggestions', [AlertController::class, 'aiSuggestions']);
-        Route::get('anomalies',   [AlertController::class, 'anomalies']);
-        Route::post('notify',     [AlertController::class, 'notifyStock']);
+        Route::get('stock',               [AlertController::class, 'stockAlerts']);
+        Route::get('suggestions',         [AlertController::class, 'aiSuggestions']);
+        Route::get('anomalies',           [AlertController::class, 'anomalies']);
+        Route::post('notify',             [AlertController::class, 'notifyStock']);
+        Route::get('commandes-suggerees', [AlertController::class, 'commandesSuggerees']);
     });
+
+    // Fournisseurs
+    Route::get('/fournisseurs',       [FournisseurController::class, 'index']);
+    Route::post('/fournisseurs',      [FournisseurController::class, 'store']);
+    Route::patch('/fournisseurs/{id}', [FournisseurController::class, 'update']);
+    Route::delete('/fournisseurs/{id}', [FournisseurController::class, 'destroy']);
+
+    // Commandes fournisseur
+    Route::get('/commandes-fournisseur',                    [CommandeFournisseurController::class, 'index']);
+    Route::post('/commandes-fournisseur',                   [CommandeFournisseurController::class, 'store']);
+    Route::get('/commandes-fournisseur/{id}',               [CommandeFournisseurController::class, 'show']);
+    Route::patch('/commandes-fournisseur/{id}',             [CommandeFournisseurController::class, 'update']);
+    Route::post('/commandes-fournisseur/{id}/envoyer',      [CommandeFournisseurController::class, 'envoyer']);
+    Route::post('/commandes-fournisseur/{id}/receptionner', [CommandeFournisseurController::class, 'receptionner']);
+    Route::delete('/commandes-fournisseur/{id}',            [CommandeFournisseurController::class, 'destroy']);
+
+    // Activity Logs (admin + manager only — enforced in controller)
+    Route::get('/activity-logs',        [ActivityLogController::class, 'index']);
+    Route::get('/activity-logs/export', [ActivityLogController::class, 'export']);
 
     // User Management
     Route::get('/users',          [UserController::class, 'index']);

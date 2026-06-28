@@ -66,7 +66,10 @@
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-600 mb-1">Secteur</label>
-              <input v-model="orgForm.org_secteur" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+              <select v-model="orgForm.org_secteur" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
+                <option value="commerce">Commerce</option>
+                <option value="restauration">Restauration</option>
+              </select>
             </div>
             <div>
               <label class="block text-xs font-medium text-slate-600 mb-1">Téléphone</label>
@@ -555,7 +558,7 @@ async function handleDemo(d: any, statut: string) {
       await openCreateOrg()
       // Pré-remplir avec les infos de la demande (après reset)
       orgForm.value.org_nom       = d.societe
-      orgForm.value.org_secteur   = d.secteur ?? ''
+      orgForm.value.org_secteur   = ['commerce', 'restauration'].includes(d.secteur) ? d.secteur : 'commerce'
       orgForm.value.org_email     = d.email
       orgForm.value.org_telephone = d.telephone ?? ''
       orgForm.value.admin_prenom  = d.prenom
@@ -612,7 +615,7 @@ const orgSaving   = ref(false)
 const orgError    = ref('')
 const plans       = ref<any[]>([])
 const orgForm     = ref({
-  org_nom: '', org_secteur: '', org_email: '', org_telephone: '',
+  org_nom: '', org_secteur: 'commerce', org_email: '', org_telephone: '',
   plan_id: '' as number | '',
   admin_prenom: '', admin_nom: '', admin_email: '', admin_password: '',
 })
@@ -620,7 +623,7 @@ const orgForm     = ref({
 async function openCreateOrg() {
   orgError.value = ''
   orgForm.value  = {
-    org_nom: '', org_secteur: '', org_email: '', org_telephone: '',
+    org_nom: '', org_secteur: 'commerce', org_email: '', org_telephone: '',
     plan_id: '',
     admin_prenom: '', admin_nom: '', admin_email: '', admin_password: '',
   }

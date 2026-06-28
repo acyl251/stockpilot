@@ -41,6 +41,7 @@
             <th class="text-left px-4 py-3 text-slate-600 font-semibold">Ticket</th>
             <th class="text-left px-4 py-3 text-slate-600 font-semibold">Date</th>
             <th class="text-left px-4 py-3 text-slate-600 font-semibold">Client</th>
+            <th class="text-left px-4 py-3 text-slate-600 font-semibold">Table</th>
             <th class="text-center px-4 py-3 text-slate-600 font-semibold">Articles</th>
             <th class="text-center px-4 py-3 text-slate-600 font-semibold">Paiement</th>
             <th class="text-center px-4 py-3 text-slate-600 font-semibold">Statut</th>
@@ -49,13 +50,18 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-if="loading"><td colspan="8" class="text-center py-10 text-slate-400">Chargement…</td></tr>
-          <tr v-else-if="sales.length === 0"><td colspan="8" class="text-center py-10 text-slate-400">Aucune vente sur la période.</td></tr>
+          <tr v-if="loading"><td colspan="9" class="text-center py-10 text-slate-400">Chargement…</td></tr>
+          <tr v-else-if="sales.length === 0"><td colspan="9" class="text-center py-10 text-slate-400">Aucune vente sur la période.</td></tr>
           <tr v-for="s in sales" :key="s.id" class="border-b border-slate-100 hover:bg-slate-50 transition-colors"
             :class="s.statut === 'annulee' ? 'opacity-60' : ''">
             <td class="px-4 py-3 font-mono text-xs text-navy font-semibold">{{ s.numero }}</td>
             <td class="px-4 py-3 text-slate-600">{{ formatDate(s.date_vente) }}</td>
             <td class="px-4 py-3 text-slate-600">{{ s.client ? s.client.nom : '—' }}</td>
+            <td class="px-4 py-3 text-slate-500 text-xs">
+              <span v-if="s.restaurant_table">Table {{ s.restaurant_table.numero }}</span>
+              <span v-else-if="s.type_commande === 'emporter'" class="text-sky-600">À emporter</span>
+              <span v-else>—</span>
+            </td>
             <td class="px-4 py-3 text-center text-slate-600">{{ s.items_count }}</td>
             <td class="px-4 py-3 text-center">
               <span class="px-2 py-0.5 rounded-full text-xs font-medium capitalize"
@@ -118,7 +124,13 @@
             <div class="flex justify-between text-slate-500"><span>TVA</span><span>{{ money(detail.total_tva) }}</span></div>
             <div v-if="Number(detail.remise_montant) > 0" class="flex justify-between text-slate-500"><span>Remise</span><span>− {{ money(detail.remise_montant) }}</span></div>
             <div class="flex justify-between font-bold text-base"><span>Total TTC</span><span>{{ money(detail.total_ttc) }}</span></div>
-            <div class="flex justify-between"><span>Paiement</span><span class="capitalize">{{ detail.mode_paiement === 'credit' ? 'Crédit' : detail.mode_paiement }}</span></div>
+            <div class="flex justify-between">
+              <span>Paiement</span>
+              <span>{{ detail.mode_paiement === 'credit' ? 'Crédit' : detail.mode_paiement === 'carte' ? 'Carte bancaire' : 'Espèces' }}</span>
+            </div>
+            <div v-if="detail.mode_paiement === 'carte' && detail.reference_carte" class="flex justify-between text-slate-500">
+              <span>Réf. TPE</span><span class="font-mono text-xs">{{ detail.reference_carte }}</span>
+            </div>
             <template v-if="detail.mode_paiement === 'especes' && detail.montant_paye">
               <div class="flex justify-between"><span>Reçu</span><span>{{ money(detail.montant_paye) }}</span></div>
               <div class="flex justify-between"><span>Rendu</span><span>{{ money(detail.monnaie_rendue) }}</span></div>
@@ -132,7 +144,7 @@
           <p class="text-center text-slate-400 text-xs mt-4">Merci de votre visite !</p>
         </div>
         <div class="flex gap-2 p-4 border-t border-slate-200">
-          <button @click="printReceipt" class="btn-primary flex-1 py-2">Imprimer</button>
+          <button @click="doPrint" class="btn-primary flex-1 py-2">Imprimer</button>
           <button @click="detail = null" class="flex-1 py-2 rounded-lg border border-slate-300 text-slate-600">Fermer</button>
         </div>
       </div>
@@ -144,6 +156,7 @@
 import { ref, onMounted } from 'vue'
 import { salesApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
+import { printReceipt } from '@/utils/print'
 
 const auth = useAuthStore()
 const orgName = auth.user?.organisation?.nom ?? 'StockPilot'
@@ -262,22 +275,13 @@ function paiementClass(m: string): string {
   if (m === 'credit') return 'bg-amber-100 text-amber-700'
   return 'bg-emerald-100 text-emerald-700'
 }
-function printReceipt() {
-  const content = document.getElementById('receipt')?.innerHTML
-  if (!content) return
-  const w = window.open('', '_blank', 'width=380,height=600')
-  if (!w) return
-  w.document.write(`<html><head><title>${detail.value?.numero ?? 'Reçu'}</title>
-    <style>
-      body{font-family:system-ui,sans-serif;font-size:13px;color:#1e293b;padding:16px;max-width:320px;margin:auto}
-      table{width:100%;border-collapse:collapse}
-      td{padding:2px 0;vertical-align:top}
-      .text-right{text-align:right}
-    </style></head><body>${content}</body></html>`)
-  w.document.close()
-  w.focus()
-  w.print()
-  w.close()
+function doPrint() {
+  if (!detail.value) return
+  printReceipt(detail.value, {
+    orgNom:       auth.user?.organisation?.nom,
+    orgAdresse:   auth.user?.organisation?.adresse,
+    orgTelephone: auth.user?.organisation?.telephone,
+  })
 }
 
 onMounted(fetchSales)

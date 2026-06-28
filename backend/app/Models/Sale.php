@@ -14,6 +14,9 @@ class Sale extends BaseModel
         'organisation_id',
         'user_id',
         'client_id',
+        'table_id',
+        'type_commande',
+        'reference_carte',
         'numero',
         'numero_facture',
         'total_ht',
@@ -86,5 +89,10 @@ class Sale extends BaseModel
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function restaurantTable(): BelongsTo
+    {
+        return $this->belongsTo(RestaurantTable::class, 'table_id');
     }
 }

@@ -111,6 +111,105 @@
       </div>
     </div>
 
+    <!-- ═══ RESTAURANT DASHBOARD (restauration only) ═══════════════════════════ -->
+    <template v-if="auth.isRestauration && resDash">
+
+      <!-- Bloc 1 — Situation en temps réel -->
+      <div class="card">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="font-semibold text-navy">Situation en temps réel</h3>
+          <RouterLink to="/app/tables" class="text-gold text-xs font-medium hover:underline">Gérer les tables →</RouterLink>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-orange-50 rounded-xl p-4 flex flex-col gap-1">
+            <span class="text-sm text-slate-500">Tables occupées</span>
+            <span class="text-3xl font-bold text-orange-600">
+              {{ resDash.situation.tables_occupees }}
+              <span class="text-lg font-normal text-slate-400">/ {{ resDash.situation.tables_total }}</span>
+            </span>
+            <span class="text-xs text-slate-400">en ce moment</span>
+          </div>
+          <div class="bg-amber-50 rounded-xl p-4 flex flex-col gap-1">
+            <span class="text-sm text-slate-500">Commandes en attente</span>
+            <span class="text-3xl font-bold text-amber-600">{{ resDash.situation.commandes_en_attente }}</span>
+            <span class="text-xs text-slate-400">envoyées en cuisine</span>
+          </div>
+          <div class="bg-emerald-50 rounded-xl p-4 flex flex-col gap-1">
+            <span class="text-sm text-slate-500">CA du jour</span>
+            <span class="text-3xl font-bold text-emerald-700">{{ formatCurrency(resDash.situation.ca_jour) }}</span>
+            <span class="text-xs text-slate-400">ventes payées aujourd'hui</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloc 2 — Top 5 plats du jour + Bloc 3 CA par service -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Bloc 2 — Top 5 plats -->
+        <div class="card">
+          <h3 class="font-semibold text-navy mb-4">Plats les plus vendus — aujourd'hui</h3>
+          <div v-if="resDash.top_plats.length === 0" class="text-slate-400 text-sm text-center py-6">
+            Aucune vente aujourd'hui.
+          </div>
+          <ol v-else class="space-y-2">
+            <li v-for="(plat, i) in resDash.top_plats" :key="plat.nom"
+              class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+              <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                :class="i === 0 ? 'bg-gold text-white' : i === 1 ? 'bg-slate-200 text-slate-600' : i === 2 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'">
+                {{ i + 1 }}
+              </span>
+              <span class="flex-1 text-sm text-navy font-medium truncate">{{ plat.nom }}</span>
+              <span class="text-xs text-slate-500 whitespace-nowrap">{{ plat.qte }} vendus</span>
+              <span class="text-sm font-semibold text-emerald-700 whitespace-nowrap">{{ formatCurrency(plat.ca) }}</span>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Bloc 3 — CA par service -->
+        <div class="card">
+          <h3 class="font-semibold text-navy mb-4">CA par service — aujourd'hui</h3>
+          <div class="space-y-3">
+            <div v-for="srv in [
+              { key: 'midi',  label: '🍽 Midi (11h–15h)', color: 'bg-sky-50 text-sky-700' },
+              { key: 'soir',  label: '🌙 Soir (18h–23h)', color: 'bg-indigo-50 text-indigo-700' },
+              { key: 'autre', label: '⏰ Autre',           color: 'bg-slate-50 text-slate-600' },
+            ]" :key="srv.key" :class="['rounded-xl p-4 flex items-center justify-between', srv.color]">
+              <div>
+                <p class="text-sm font-medium">{{ srv.label }}</p>
+                <p class="text-xs opacity-70">{{ resDash.ca_service[srv.key].nb }} vente(s)</p>
+              </div>
+              <p class="text-xl font-bold">{{ formatCurrency(resDash.ca_service[srv.key].ca) }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bloc 4 — Ingrédients à risque -->
+      <div v-if="resDash.alertes_ingredients.length > 0" class="card border-l-4 border-red-400">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-navy">⚠ Ingrédients qui vont manquer</h3>
+          <RouterLink to="/app/consommation" class="text-gold text-xs font-medium hover:underline">Voir consommation →</RouterLink>
+        </div>
+        <div class="space-y-2">
+          <div v-for="ing in resDash.alertes_ingredients" :key="ing.nom"
+            class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+            <span class="w-2 h-2 rounded-full flex-shrink-0"
+              :class="ing.jours_restants < 1 ? 'bg-red-500' : 'bg-orange-400'" />
+            <span class="flex-1 text-sm font-medium text-navy">{{ ing.nom }}</span>
+            <div class="text-right">
+              <p class="text-xs text-slate-500">Stock : {{ ing.stock_actuel }} {{ ing.unite }}</p>
+              <p class="text-xs font-semibold"
+                :class="ing.jours_restants < 1 ? 'text-red-600' : 'text-orange-600'">
+                {{ ing.jours_restants < 1 ? 'Rupture imminente' : `≈ ${ing.jours_restants}j restants` }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </template>
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
     <!-- Chiffre d'affaires -->
     <div class="card">
       <h3 class="font-semibold text-navy mb-4">Chiffre d'affaires</h3>
@@ -195,6 +294,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlertsStore } from '@/stores/alerts'
 import { dashboardApi } from '@/services/api'
+
 import KpiCard from '@/components/KpiCard.vue'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
@@ -205,6 +305,8 @@ const alerts = useAlertsStore()
 const kpis         = ref<any>({})
 const caisse       = ref<any>({ ca_jour: 0, nb_jour: 0, ca_mois_ttc: 0, nb_mois: 0 })
 const rentabilite  = ref<any>({ ca_ht_mois: 0, marge_mois: 0, marge_pct: 0, top_produits: [] })
+const restauration = ref<any>(null)
+const resDash      = ref<any>(null)
 const kpisIA       = ref<any[]|null>(null)
 const mouvements7j = ref<any[]>([])
 const ca7jDetail   = ref<any[]>([])
@@ -254,6 +356,10 @@ onMounted(async () => {
   kpis.value         = dashRes.data.kpis
   caisse.value       = dashRes.data.caisse ?? caisse.value
   rentabilite.value  = dashRes.data.rentabilite ?? rentabilite.value
+  restauration.value = dashRes.data.restauration ?? null
+  if (auth.isRestauration) {
+    try { resDash.value = (await dashboardApi.restaurant()).data } catch { /* non-fatal */ }
+  }
   mouvements7j.value = dashRes.data.mouvements_7j ?? []
   ca7jDetail.value   = dashRes.data.ca_7j_detail ?? []
   kpisIA.value       = dashRes.data.kpis_ia ?? null

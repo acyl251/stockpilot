@@ -53,14 +53,20 @@ const navItems = computed(() => {
   return [
     { to: '/app',          icon: 'dashboard', label: 'Tableau de bord', badge: undefined },
     { to: '/app/products', icon: 'products',  label: 'Catalogue', badge: undefined },
+    ...(auth.isRestauration ? [{ to: '/app/menu', icon: 'menu', label: 'Menu', badge: undefined }] : []),
+    ...(auth.isRestauration ? [{ to: '/app/supplements', icon: 'supplements', label: 'Suppléments', badge: undefined }] : []),
+    ...(auth.isRestauration ? [{ to: '/app/tables',       icon: 'tables',       label: 'Tables',       badge: undefined }] : []),
+    ...(auth.isRestauration ? [{ to: '/app/consommation', icon: 'consommation', label: 'Consommation', badge: undefined }] : []),
     { to: '/app/caisse',   icon: 'caisse',    label: 'Caisse', badge: undefined },
     { to: '/app/ventes',   icon: 'ventes',    label: 'Ventes', badge: undefined },
     { to: '/app/clients',  icon: 'clients',   label: 'Clients', badge: undefined },
-    { to: '/app/movements',icon: 'movements', label: 'Mouvements', badge: undefined },
+    { to: '/app/movements',      icon: 'movements',    label: 'Mouvements',   badge: undefined },
+    { to: '/app/fournisseurs',   icon: 'fournisseurs', label: 'Fournisseurs', badge: undefined },
     { to: '/app/alerts',   icon: 'alerts',    label: 'Alertes & IA',
       badge: alerts.totalAlerts() || undefined },
     { to: '/app/config',   icon: 'config',    label: 'Configuration', badge: undefined },
     ...(auth.isAdmin ? [{ to: '/app/users', icon: 'users', label: 'Utilisateurs', badge: undefined }] : []),
+    ...(['admin', 'manager'].includes(auth.user?.role ?? '') ? [{ to: '/app/logs', icon: 'logs', label: 'Activité', badge: undefined }] : []),
   ]
 })
 </script>

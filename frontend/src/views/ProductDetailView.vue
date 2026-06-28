@@ -74,7 +74,15 @@
           <div class="grid grid-cols-2 gap-3 text-sm">
             <div v-for="(val, key) in product.attributs" :key="key">
               <p class="text-slate-500">{{ key }}</p>
-              <p class="font-semibold text-navy mt-0.5">{{ val }}</p>
+              <template v-if="String(key).toLowerCase() === 'conservation'">
+                <p class="font-semibold text-navy mt-0.5 flex items-center gap-1.5">
+                  <span>{{ { ambiant: '🌡 Ambiant', refrigere: '❄ Réfrigéré', congele: '🧊 Congelé' }[String(val)] ?? val }}</span>
+                  <span class="text-xs font-normal text-slate-400">
+                    {{ { ambiant: '15°C – 25°C', refrigere: '0°C – 4°C', congele: '−18°C et moins' }[String(val)] ?? '' }}
+                  </span>
+                </p>
+              </template>
+              <p v-else class="font-semibold text-navy mt-0.5">{{ val }}</p>
             </div>
           </div>
         </div>

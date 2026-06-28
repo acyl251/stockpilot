@@ -5,7 +5,9 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Sale;
+use App\Services\ActivityLogService;
 use App\Services\InvoiceService;
+use App\Services\OrderService;
 use App\Services\SaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +18,7 @@ class SaleController extends Controller
     public function __construct(
         private SaleService $saleService,
         private InvoiceService $invoiceService,
+        private OrderService $orderService,
     ) {}
 
     /** Facture PDF légale d'une vente (numéro attribué à la 1re génération). */
@@ -40,7 +43,7 @@ class SaleController extends Controller
             ->selectRaw("COALESCE(SUM(CASE WHEN statut != 'annulee' THEN total_ttc ELSE 0 END), 0) as ca_ttc")
             ->first();
 
-        $paginator = $filtered(Sale::with(['user:id,nom,prenom', 'client:id,nom'])->withCount('items'))
+        $paginator = $filtered(Sale::with(['user:id,nom,prenom', 'client:id,nom', 'restaurantTable:id,numero'])->withCount('items'))
             ->latest('date_vente')
             ->paginate($request->per_page ?? 25);
 
@@ -55,12 +58,37 @@ class SaleController extends Controller
         return response()->json($payload);
     }
 
+    /**
+     * Check ingredient availability for a caisse sale without side effects.
+     * Only meaningful for restauration sector — returns empty warnings otherwise.
+     */
+    public function checkIngredients(Request $request): JsonResponse
+    {
+        $org = app('current_user')->organisation;
+
+        if (! $org->isRestauration()) {
+            return response()->json(['warnings' => []]);
+        }
+
+        $data = $request->validate([
+            'items'                 => 'required|array|min:1',
+            'items.*.product_id'    => 'nullable|integer',
+            'items.*.supplement_id' => 'nullable|integer',
+            'items.*.quantite'      => 'required|numeric|min:0.001',
+        ]);
+
+        $warnings = $this->orderService->checkIngredientWarnings($data['items']);
+
+        return response()->json(['warnings' => $warnings]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'items'                => 'required|array|min:1',
-            'items.*.product_id'   => 'required|integer',
-            'items.*.quantite'     => 'required|numeric|min:0.001',
+            'items'                    => 'required|array|min:1',
+            'items.*.product_id'       => 'nullable|integer',
+            'items.*.supplement_id'    => 'nullable|integer',
+            'items.*.quantite'         => 'required|numeric|min:0.001',
             'mode_paiement'        => 'required|in:especes,carte,credit',
             'montant_paye'         => 'nullable|numeric|min:0',
             'remise_type'          => 'nullable|in:pourcentage,montant',
@@ -68,6 +96,7 @@ class SaleController extends Controller
             'client_id'            => 'nullable|integer|exists:clients,id',
             'client_nom'           => 'nullable|string|max:150',
             'client_telephone'     => 'nullable|string|max:30',
+            'reference_carte'      => 'nullable|string|max:100',
         ]);
 
         // Vente à crédit : résoudre le client (existant ou créé à la volée).
@@ -80,19 +109,24 @@ class SaleController extends Controller
         }
 
         $sale = $this->saleService->createSale(
-            items:        $data['items'],
-            userId:       app('current_user')->id,
-            modePaiement: $data['mode_paiement'],
-            montantPaye:  $data['montant_paye'] ?? null,
-            remiseType:   $data['remise_type'] ?? null,
-            remiseValeur: $data['remise_valeur'] ?? null,
-            clientId:     $clientId,
+            items:          $data['items'],
+            userId:         app('current_user')->id,
+            modePaiement:   $data['mode_paiement'],
+            montantPaye:    $data['montant_paye'] ?? null,
+            remiseType:     $data['remise_type'] ?? null,
+            remiseValeur:   $data['remise_valeur'] ?? null,
+            clientId:       $clientId,
+            referenceCarte: $data['reference_carte'] ?? null,
         );
 
-        return response()->json(
-            $sale->load(['items.product:id,nom,reference', 'user:id,nom,prenom', 'client:id,nom,telephone']),
-            201,
+        $sale->load(['items.product:id,nom,reference', 'user:id,nom,prenom', 'client:id,nom,telephone']);
+
+        ActivityLogService::log('sold', 'caisse',
+            "Vente #{$sale->numero} — " . number_format((float) $sale->total_ttc, 3, '.', '') . " TND — {$sale->items->count()} articles",
+            ['sale_id' => $sale->id, 'total' => (float) $sale->total_ttc]
         );
+
+        return response()->json($sale, 201);
     }
 
     public function show(int $id): JsonResponse
@@ -106,6 +140,11 @@ class SaleController extends Controller
     public function cancel(int $id): JsonResponse
     {
         $sale = $this->saleService->cancelSale($id, app('current_user')->id);
+
+        ActivityLogService::log('cancelled', 'vente',
+            "Vente #{$sale->numero} annulée — " . number_format((float) $sale->total_ttc, 3, '.', '') . " TND remis en stock",
+            ['sale_id' => $sale->id]
+        );
 
         return response()->json($sale->load(['items.product:id,nom,reference', 'user:id,nom,prenom']));
     }

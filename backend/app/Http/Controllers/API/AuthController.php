@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -40,6 +41,7 @@ class AuthController extends Controller
         }
 
         $user->resetLoginAttempts();
+        ActivityLogService::logLogin($user);
 
         return $this->tokenResponse($user);
     }
@@ -65,6 +67,8 @@ class AuthController extends Controller
 
     public function logout(): JsonResponse
     {
+        $user = app('current_user');
+        ActivityLogService::log('logout', 'utilisateur', "Déconnexion de {$user->prenom} {$user->nom}");
         JWTAuth::invalidate(JWTAuth::getToken());
         return response()->json(['message' => 'Déconnecté avec succès.']);
     }

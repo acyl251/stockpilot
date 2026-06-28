@@ -17,21 +17,40 @@
         Aucun produit disponible.
       </div>
 
-      <div v-else class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
-        <button v-for="p in products" :key="p.id"
-          @click="addToCart(p)"
-          :disabled="availableStock(p) <= 0"
-          class="card p-3 text-left hover:ring-2 hover:ring-gold transition disabled:opacity-40 disabled:cursor-not-allowed flex flex-col">
-          <p class="font-semibold text-navy text-sm leading-snug line-clamp-2">{{ p.nom }}</p>
-          <p class="text-slate-400 text-xs font-mono mt-0.5">{{ p.reference }}</p>
-          <div class="mt-auto pt-2 flex items-center justify-between">
-            <span class="text-gold font-bold text-sm">{{ money(p.prix_vente_ttc) }}</span>
-            <span class="text-xs"
-              :class="availableStock(p) <= 0 ? 'text-red-500' : 'text-slate-500'">
-              Stock : {{ availableStock(p) }}
-            </span>
+      <div v-else class="space-y-4">
+        <!-- Plats -->
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+          <button v-for="p in products" :key="p.id"
+            @click="addToCart(p)"
+            :disabled="availableStock(p) <= 0"
+            class="card p-3 text-left hover:ring-2 hover:ring-gold transition disabled:opacity-40 disabled:cursor-not-allowed flex flex-col">
+            <p class="font-semibold text-navy text-sm leading-snug line-clamp-2">{{ p.nom }}</p>
+            <p class="text-slate-400 text-xs font-mono mt-0.5">{{ p.reference }}</p>
+            <div class="mt-auto pt-2 flex items-center justify-between">
+              <span class="text-gold font-bold text-sm">{{ money(p.prix_vente_ttc) }}</span>
+              <span class="text-xs"
+                :class="!isCompose(p) && availableStock(p) <= 0 ? 'text-red-500' : 'text-slate-500'">
+                {{ isCompose(p) ? 'Recette' : `Stock : ${availableStock(p)}` }}
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Suppléments (restauration) -->
+        <template v-if="supplements.length > 0">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider pt-1">Suppléments</p>
+          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+            <button v-for="s in supplements" :key="`supp-${s.id}`"
+              @click="addSupplementToCart(s)"
+              class="card p-3 text-left hover:ring-2 hover:ring-amber-400 transition flex flex-col bg-amber-50/40">
+              <p class="font-semibold text-navy text-sm leading-snug line-clamp-2">{{ s.nom }}</p>
+              <div class="mt-auto pt-2 flex items-center justify-between">
+                <span class="text-amber-600 font-bold text-sm">{{ money(s.prix_vente) }}</span>
+                <span class="text-xs text-slate-400">{{ s.quantite }} {{ s.unite || '' }}</span>
+              </div>
+            </button>
           </div>
-        </button>
+        </template>
       </div>
     </div>
 
@@ -123,6 +142,18 @@
           </div>
         </div>
 
+        <div v-if="mode === 'carte'" class="space-y-3 bg-indigo-50 rounded-lg p-3">
+          <div class="text-center">
+            <p class="text-xs text-indigo-500 font-medium uppercase tracking-wide mb-1">Montant à encaisser sur le TPE</p>
+            <p class="text-3xl font-bold text-indigo-700">{{ money(totalTtc) }}</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">N° transaction TPE <span class="text-slate-400">(optionnel)</span></label>
+            <input v-model="referenceCarte" type="text" placeholder="ex: 000123456789"
+              class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+          </div>
+        </div>
+
         <!-- Crédit : sélection / création du client -->
         <div v-if="mode === 'credit'" class="space-y-2 bg-amber-50 rounded-lg p-3">
           <p class="text-xs text-amber-700 font-medium">Vente à crédit — rattachée à un client</p>
@@ -157,8 +188,48 @@
 
         <button @click="validate" :disabled="!canValidate || submitting"
           class="btn-primary w-full py-2.5 disabled:opacity-50">
-          {{ submitting ? 'Encaissement…' : 'Encaisser' }}
+          {{ submitting ? 'Encaissement…' : mode === 'carte' ? 'Confirmer le paiement carte' : 'Encaisser' }}
         </button>
+      </div>
+    </div>
+
+    <!-- ── Modal alerte stock insuffisant (restauration) ───────────────── -->
+    <div v-if="showStockWarning" class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <div class="p-5 border-b border-slate-200 flex items-center gap-3">
+          <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+          </div>
+          <div>
+            <h2 class="font-bold text-navy">Stock insuffisant</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Certains ingrédients manquent pour cette commande</p>
+          </div>
+        </div>
+        <div class="p-5 space-y-2 max-h-64 overflow-y-auto">
+          <div v-for="w in stockWarnings" :key="w.ingredient"
+            class="flex items-start gap-2 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2 text-sm">
+            <span class="text-orange-500 mt-0.5">⚠</span>
+            <div>
+              <span class="font-medium text-navy">{{ w.ingredient }}</span>
+              <span class="text-slate-500"> — il manque </span>
+              <span class="font-semibold text-red-600">{{ w.manque }} {{ w.unite }}</span>
+              <span class="text-slate-400 text-xs block">Stock actuel : {{ w.stock_actuel }} {{ w.unite }} · Besoin : {{ w.quantite_necessaire }} {{ w.unite }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-3 p-5 border-t border-slate-200">
+          <button @click="cancelStockWarning"
+            class="flex-1 py-2.5 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-50 transition-colors">
+            Annuler
+          </button>
+          <button @click="confirmSaleAnyway" :disabled="submitting"
+            class="flex-1 py-2.5 rounded-lg bg-orange-500 text-white font-medium hover:bg-orange-600 transition-colors disabled:opacity-50">
+            {{ submitting ? 'Encaissement…' : 'Encaisser quand même' }}
+          </button>
+        </div>
       </div>
     </div>
 
@@ -185,7 +256,13 @@
             <div class="flex justify-between text-slate-500"><span>TVA</span><span>{{ money(receipt.total_tva) }}</span></div>
             <div v-if="Number(receipt.remise_montant) > 0" class="flex justify-between text-slate-500"><span>Remise</span><span>− {{ money(receipt.remise_montant) }}</span></div>
             <div class="flex justify-between font-bold text-base"><span>Total TTC</span><span>{{ money(receipt.total_ttc) }}</span></div>
-            <div class="flex justify-between"><span>Paiement</span><span class="capitalize">{{ receipt.mode_paiement === 'credit' ? 'Crédit' : receipt.mode_paiement }}</span></div>
+            <div class="flex justify-between">
+              <span>Paiement</span>
+              <span>{{ receipt.mode_paiement === 'credit' ? 'Crédit' : receipt.mode_paiement === 'carte' ? 'Carte bancaire' : 'Espèces' }}</span>
+            </div>
+            <div v-if="receipt.mode_paiement === 'carte' && receipt.reference_carte" class="flex justify-between text-slate-500">
+              <span>Réf. TPE</span><span class="font-mono">{{ receipt.reference_carte }}</span>
+            </div>
             <template v-if="receipt.mode_paiement === 'especes' && receipt.montant_paye">
               <div class="flex justify-between"><span>Reçu</span><span>{{ money(receipt.montant_paye) }}</span></div>
               <div class="flex justify-between"><span>Rendu</span><span>{{ money(receipt.monnaie_rendue) }}</span></div>
@@ -199,7 +276,7 @@
           <p class="text-center text-slate-400 text-xs mt-4">Merci de votre visite !</p>
         </div>
         <div class="flex gap-2 p-4 border-t border-slate-200 no-print">
-          <button @click="printReceipt" class="btn-primary flex-1 py-2">Imprimer</button>
+          <button @click="doPrint" class="btn-primary flex-1 py-2">Imprimer</button>
           <button @click="receipt = null" class="flex-1 py-2 rounded-lg border border-slate-300 text-slate-600">Fermer</button>
         </div>
       </div>
@@ -209,20 +286,37 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { productsApi, salesApi, clientsApi } from '@/services/api'
+import { productsApi, salesApi, clientsApi, supplementsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
+import { printReceipt } from '@/utils/print'
 
 interface Product {
   id: number; nom: string; reference: string
-  quantite: number; prix_vente_ttc: number
+  quantite: number; prix_vente_ttc: number; type?: string
 }
-interface CartLine extends Product { qty: number; stock: number }
+interface Supplement {
+  id: number; nom: string; prix_vente: number; active: boolean
+  ingredient_id: number; quantite: number; unite: string | null
+}
+interface CartLine {
+  id: number; nom: string; prix_vente_ttc: number
+  qty: number; stock: number
+  is_supplement?: true; supplement_id?: number
+  // kept for HT calculation
+  prix_vente_ht?: number
+}
 interface Client { id: number; nom: string; telephone?: string; solde?: number }
 
 const auth = useAuthStore()
 const orgName = computed(() => auth.user?.organisation?.nom ?? 'StockPilot')
 
-const products = ref<Product[]>([])
+// Stock-warning modal state (restauration only)
+const showStockWarning = ref(false)
+const stockWarnings    = ref<any[]>([])
+const pendingPayload   = ref<any>(null)
+
+const products    = ref<Product[]>([])
+const supplements = ref<Supplement[]>([])
 const loading = ref(false)
 const search = ref('')
 const barcode = ref('')
@@ -231,6 +325,7 @@ const scanError = ref(false)
 const cart = ref<CartLine[]>([])
 const mode = ref<'especes' | 'carte' | 'credit'>('especes')
 const montantPaye = ref<number | null>(null)
+const referenceCarte = ref('')
 const remiseType = ref<'pourcentage' | 'montant' | null>(null)
 const remiseValeur = ref<number | null>(null)
 const submitting = ref(false)
@@ -273,15 +368,30 @@ function debouncedFetch() {
 async function fetchProducts() {
   loading.value = true
   try {
-    const { data } = await productsApi.list({ search: search.value, per_page: 100 })
-    products.value = data.data
+    const [prodRes, suppRes] = await Promise.all([
+      productsApi.list({
+        search: search.value,
+        per_page: 100,
+        actif: 1,
+        ...(auth.isRestauration ? { type: 'compose' } : {}),
+      }),
+      auth.isRestauration ? supplementsApi.list() : Promise.resolve({ data: [] }),
+    ])
+    products.value = prodRes.data.data
+    supplements.value = (suppRes.data as Supplement[]).filter((s: Supplement) => s.active)
   } finally {
     loading.value = false
   }
 }
 
+// Produits composés (plats/recettes) : stock sans signification, toujours dispo
+function isCompose(p: Product | CartLine): boolean {
+  return (p as any).type === 'compose'
+}
+
 // Stock restant en tenant compte de ce qui est déjà dans le panier
 function availableStock(p: Product): number {
+  if (isCompose(p)) return Infinity
   const inCart = cart.value.find((l) => l.id === p.id)?.qty ?? 0
   return p.quantite - inCart
 }
@@ -291,12 +401,37 @@ function addToCart(p: Product) {
   if (line) {
     if (line.qty < line.stock) line.qty++
   } else {
-    cart.value.push({ ...p, qty: 1, stock: p.quantite })
+    // Pour les composés, stock=Infinity — pas de plafond de quantité au panier
+    cart.value.push({ ...p, qty: 1, stock: isCompose(p) ? Infinity : p.quantite })
+  }
+}
+function addSupplementToCart(s: Supplement) {
+  const cartKey = `supp-${s.id}`
+  const line = cart.value.find((l) => l.is_supplement && l.supplement_id === s.id)
+  if (line) {
+    line.qty++
+  } else {
+    cart.value.push({
+      id:             s.id,        // used as display key only
+      nom:            s.nom,
+      prix_vente_ttc: s.prix_vente,
+      prix_vente_ht:  s.prix_vente, // restauration: TTC = HT
+      qty:            1,
+      stock:          Infinity,
+      is_supplement:  true,
+      supplement_id:  s.id,
+    } as any)
   }
 }
 function inc(line: CartLine) { if (line.qty < line.stock) line.qty++ }
 function dec(line: CartLine) { line.qty--; if (line.qty <= 0) removeLine(line) }
-function removeLine(line: CartLine) { cart.value = cart.value.filter((l) => l.id !== line.id) }
+function removeLine(line: CartLine) {
+  cart.value = cart.value.filter((l) =>
+    l.is_supplement
+      ? !(l.is_supplement && l.supplement_id === line.supplement_id)
+      : l.id !== line.id
+  )
+}
 
 const r3 = (n: number) => Math.round(n * 1000) / 1000
 
@@ -304,7 +439,7 @@ const grossTtc = computed(() =>
   r3(cart.value.reduce((s, l) => s + l.prix_vente_ttc * l.qty, 0)))
 const totalHt = computed(() =>
   r3(cart.value.reduce((s, l) => {
-    // prix_vente_ttc inclut la TVA ; on reconstitue le HT à partir du ratio produit
+    if (l.is_supplement) return s + (l.prix_vente_ht ?? l.prix_vente_ttc) * l.qty
     const p = products.value.find((x) => x.id === l.id)
     return s + (p ? (p as any).prix_vente_ht * l.qty : 0)
   }, 0)))
@@ -334,13 +469,18 @@ async function scanBarcode() {
   scanMsg.value = ''
   scanError.value = false
   try {
-    const { data } = await productsApi.list({ search: code, per_page: 5 })
+    const { data } = await productsApi.list({
+      search: code,
+      per_page: 5,
+      actif: 1,
+      ...(auth.isRestauration ? { type: 'compose' } : {}),
+    })
     const list: Product[] = data.data
     const match = list.find((p) => p.reference?.toLowerCase() === code.toLowerCase()) ?? list[0]
     if (!match) {
       scanError.value = true
       scanMsg.value = `Aucun produit pour « ${code} ».`
-    } else if (match.quantite <= 0) {
+    } else if (!isCompose(match) && match.quantite <= 0) {
       scanError.value = true
       scanMsg.value = `« ${match.nom} » est en rupture.`
     } else {
@@ -360,26 +500,78 @@ async function scanBarcode() {
 async function validate() {
   error.value = ''
   submitting.value = true
-  try {
-    const payload: any = {
-      items: cart.value.map((l) => ({ product_id: l.id, quantite: l.qty })),
-      mode_paiement: mode.value,
-      montant_paye: mode.value === 'carte' ? null : montantPaye.value,
-      remise_type: remiseType.value,
-      remise_valeur: remiseType.value ? remiseValeur.value : null,
-    }
-    if (mode.value === 'credit') {
-      if (selectedClient.value) {
-        payload.client_id = selectedClient.value.id
-      } else {
-        payload.client_nom = clientSearch.value.trim()
-        payload.client_telephone = clientTelephone.value.trim() || null
+
+  const items = cart.value.map((l) =>
+    l.is_supplement
+      ? { supplement_id: l.supplement_id, quantite: l.qty }
+      : { product_id: l.id, quantite: l.qty }
+  )
+
+  // Vérification stock ingrédients (restauration uniquement, sans effet de bord)
+  if (auth.isRestauration) {
+    try {
+      const { data: check } = await salesApi.checkIngredients({ items })
+      if (check.warnings?.length > 0) {
+        const payload: any = {
+          items,
+          mode_paiement:   mode.value,
+          montant_paye:    mode.value === 'carte' ? null : montantPaye.value,
+          reference_carte: mode.value === 'carte' ? (referenceCarte.value.trim() || null) : null,
+          remise_type:     remiseType.value,
+          remise_valeur:   remiseType.value ? remiseValeur.value : null,
+        }
+        if (mode.value === 'credit') {
+          if (selectedClient.value) payload.client_id = selectedClient.value.id
+          else {
+            payload.client_nom       = clientSearch.value.trim()
+            payload.client_telephone = clientTelephone.value.trim() || null
+          }
+        }
+        stockWarnings.value    = check.warnings
+        pendingPayload.value   = payload
+        showStockWarning.value = true
+        submitting.value       = false
+        return // attendre confirmation
       }
+    } catch {
+      // Si le check échoue (réseau, etc.), on laisse passer et on continue
     }
+  }
+
+  await _doCreateSale({
+    items,
+    mode_paiement:   mode.value,
+    montant_paye:    mode.value === 'carte' ? null : montantPaye.value,
+    reference_carte: mode.value === 'carte' ? (referenceCarte.value.trim() || null) : null,
+    remise_type:     remiseType.value,
+    remise_valeur:   remiseType.value ? remiseValeur.value : null,
+    ...(mode.value === 'credit' ? (selectedClient.value
+      ? { client_id: selectedClient.value.id }
+      : { client_nom: clientSearch.value.trim(), client_telephone: clientTelephone.value.trim() || null }
+    ) : {}),
+  })
+}
+
+async function confirmSaleAnyway() {
+  showStockWarning.value = false
+  submitting.value = true
+  await _doCreateSale(pendingPayload.value)
+  pendingPayload.value = null
+}
+
+function cancelStockWarning() {
+  showStockWarning.value = false
+  stockWarnings.value    = []
+  pendingPayload.value   = null
+}
+
+async function _doCreateSale(payload: any) {
+  try {
     const { data } = await salesApi.create(payload)
     receipt.value = data
     cart.value = []
     montantPaye.value = null
+    referenceCarte.value = ''
     remiseType.value = null
     remiseValeur.value = null
     mode.value = 'especes'
@@ -401,22 +593,14 @@ function money(v: number | string | null | undefined): string {
 function formatDate(d: string): string {
   return new Date(d).toLocaleString('fr-FR')
 }
-function printReceipt() {
-  const content = document.getElementById('receipt')?.innerHTML
-  if (!content) return
-  const w = window.open('', '_blank', 'width=380,height=600')
-  if (!w) return
-  w.document.write(`<html><head><title>${receipt.value?.numero ?? 'Reçu'}</title>
-    <style>
-      body{font-family:system-ui,sans-serif;font-size:13px;color:#1e293b;padding:16px;max-width:320px;margin:auto}
-      table{width:100%;border-collapse:collapse}
-      td{padding:2px 0;vertical-align:top}
-      .text-right{text-align:right}
-    </style></head><body>${content}</body></html>`)
-  w.document.close()
-  w.focus()
-  w.print()
-  w.close()
+function doPrint() {
+  if (!receipt.value) return
+  printReceipt(receipt.value, {
+    orgNom:       auth.user?.organisation?.nom,
+    orgAdresse:   auth.user?.organisation?.adresse,
+    orgTelephone: auth.user?.organisation?.telephone,
+    cashierName:  [auth.user?.prenom, auth.user?.nom].filter(Boolean).join(' '),
+  })
 }
 
 onMounted(fetchProducts)

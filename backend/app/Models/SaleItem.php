@@ -13,6 +13,7 @@ class SaleItem extends BaseModel
         'organisation_id',
         'sale_id',
         'product_id',
+        'supplement_id',
         'designation',
         'quantite',
         'prix_unitaire_ht',
@@ -39,5 +40,10 @@ class SaleItem extends BaseModel
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function supplement(): BelongsTo
+    {
+        return $this->belongsTo(Supplement::class);
     }
 }

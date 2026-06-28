@@ -103,6 +103,55 @@
       </div>
     </div>
 
+    <!-- Tab: Commandes suggérées -->
+    <div v-if="activeTab === 'commandes'">
+      <div v-if="loadingCmd" class="text-center py-10 text-slate-400">Chargement…</div>
+      <div v-else-if="commandesSuggerees.length === 0" class="text-center py-12 text-emerald-600 font-medium">
+        ✅ Aucun réapprovisionnement nécessaire — tous les stocks sont au-dessus du seuil.
+      </div>
+      <div v-else class="space-y-3">
+        <p class="text-sm text-slate-500">Produits sous le seuil d'alerte — créez une commande en un clic.</p>
+        <div class="card p-0 overflow-hidden">
+          <table class="w-full text-sm">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="text-left px-4 py-3 font-semibold text-slate-600">Produit</th>
+                <th class="text-right px-4 py-3 font-semibold text-slate-600">Stock</th>
+                <th class="text-right px-4 py-3 font-semibold text-slate-600">Seuil</th>
+                <th class="text-left px-4 py-3 font-semibold text-slate-600 hidden md:table-cell">Fournisseur habituel</th>
+                <th class="px-4 py-3 w-32"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="s in commandesSuggerees" :key="s.product_id"
+                class="border-b border-slate-100">
+                <td class="px-4 py-3 font-medium text-navy">{{ s.nom }}</td>
+                <td class="px-4 py-3 text-right">
+                  <span :class="['font-bold', s.quantite <= 0 ? 'text-red-600' : 'text-amber-600']">
+                    {{ s.quantite }} {{ s.unite }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 text-right text-slate-500">{{ s.seuil_alerte }}</td>
+                <td class="px-4 py-3 hidden md:table-cell">
+                  <span v-if="s.fournisseur" class="text-slate-700">{{ s.fournisseur.nom }}</span>
+                  <span v-else class="text-slate-400 text-xs italic">Aucun historique</span>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <button @click="creerCommandeRapide(s)"
+                    :disabled="!s.fournisseur"
+                    class="text-xs bg-navy text-white px-3 py-1.5 rounded-lg font-medium hover:bg-navy/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    :title="s.fournisseur ? 'Créer une commande brouillon' : 'Aucun fournisseur connu — allez dans Fournisseurs'">
+                    Commander
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-if="cmdSuccess" class="text-emerald-600 text-sm font-medium">✓ Commande brouillon créée dans Fournisseurs.</p>
+      </div>
+    </div>
+
     <!-- Tab: Anomaly Detection -->
     <div v-if="activeTab === 'anomalies'">
       <div v-if="!auth.hasAI" class="text-center py-10">
@@ -148,12 +197,43 @@
 import { ref, computed, onMounted } from 'vue'
 import { useAlertsStore } from '@/stores/alerts'
 import { useAuthStore } from '@/stores/auth'
-import { alertsApi } from '@/services/api'
+import { alertsApi, commandesFournisseurApi } from '@/services/api'
 
 const alerts     = useAlertsStore()
 const auth       = useAuthStore()
 const activeTab  = ref('stock')
 const notifying  = ref(false)
+
+// Commandes suggérées
+const commandesSuggerees = ref<any[]>([])
+const loadingCmd = ref(false)
+const cmdSuccess = ref(false)
+
+async function loadCommandesSuggerees() {
+  loadingCmd.value = true
+  try {
+    const { data } = await alertsApi.commandesSuggerees()
+    commandesSuggerees.value = data
+  } finally {
+    loadingCmd.value = false
+  }
+}
+
+async function creerCommandeRapide(s: any) {
+  if (! s.fournisseur) return
+  try {
+    await commandesFournisseurApi.create({
+      fournisseur_id: s.fournisseur.id,
+      date_commande:  new Date().toISOString().slice(0, 10),
+      statut:         'brouillon',
+      items: [{ product_id: s.product_id, quantite: s.seuil_alerte, unite: s.unite }],
+    })
+    cmdSuccess.value = true
+    setTimeout(() => (cmdSuccess.value = false), 4000)
+  } catch (e: any) {
+    alert(e.response?.data?.message ?? 'Erreur lors de la création.')
+  }
+}
 
 async function notifyStock() {
   notifying.value = true
@@ -172,6 +252,7 @@ async function notifyStock() {
 
 const tabs = computed(() => [
   { key: 'stock',       label: 'Ruptures & Alertes', badge: alerts.totalAlerts() || undefined },
+  { key: 'commandes',   label: '🛒 Commandes suggérées', badge: commandesSuggerees.value.length || undefined },
   { key: 'suggestions', label: '✨ Suggestions IA',  badge: undefined },
   { key: 'anomalies',   label: '🔍 Anomalies',       badge: undefined },
 ])
@@ -179,5 +260,8 @@ const tabs = computed(() => [
 function loadSuggestions() { alerts.fetchSuggestions() }
 function loadAnomalies()   { alerts.fetchAnomalies() }
 
-onMounted(() => alerts.fetchStockAlerts())
+onMounted(async () => {
+  await alerts.fetchStockAlerts()
+  loadCommandesSuggerees()
+})
 </script>

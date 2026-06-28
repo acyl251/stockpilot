@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Sale;
+use App\Services\ActivityLogService;
 use App\Services\ClientService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
@@ -100,12 +101,17 @@ class ClientController extends Controller
             'note'          => 'nullable|string|max:255',
         ]);
 
+        $client  = Client::findOrFail($id);
         $payment = $this->clientService->recordPayment(
             clientId:     $id,
             montant:      (float) $data['montant'],
             userId:       app('current_user')->id,
             modePaiement: $data['mode_paiement'] ?? 'especes',
             note:         $data['note'] ?? null,
+        );
+
+        ActivityLogService::log('updated', 'client',
+            "Paiement " . number_format((float) $data['montant'], 3, '.', '') . " TND reçu de {$client->nom}"
         );
 
         return response()->json([

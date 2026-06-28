@@ -30,15 +30,27 @@ const router = createRouter({
         { path: '',         name: 'dashboard',  component: () => import('@/views/DashboardView.vue') },
         { path: 'products', name: 'products',   component: () => import('@/views/ProductsView.vue') },
         { path: 'products/:id', name: 'product-detail', component: () => import('@/views/ProductDetailView.vue') },
+        { path: 'menu',        name: 'menu',        component: () => import('@/views/MenuView.vue') },
+        { path: 'supplements', name: 'supplements', component: () => import('@/views/SupplementsView.vue') },
+        { path: 'tables',       name: 'tables',       component: () => import('@/views/TablesView.vue') },
+        { path: 'consommation', name: 'consommation', component: () => import('@/views/ConsommationView.vue') },
         { path: 'caisse',    name: 'caisse',    component: () => import('@/views/CaisseView.vue') },
         { path: 'ventes',    name: 'ventes',    component: () => import('@/views/VentesView.vue') },
         { path: 'clients',   name: 'clients',   component: () => import('@/views/ClientsView.vue') },
-        { path: 'movements', name: 'movements', component: () => import('@/views/MovementsView.vue') },
+        { path: 'movements',    name: 'movements',    component: () => import('@/views/MovementsView.vue') },
+        { path: 'fournisseurs', name: 'fournisseurs', component: () => import('@/views/FournisseursView.vue') },
         { path: 'alerts',    name: 'alerts',    component: () => import('@/views/AlertsView.vue') },
         { path: 'config',    name: 'config',    component: () => import('@/views/ConfigView.vue') },
         { path: 'users',       name: 'users',       component: () => import('@/views/UsersView.vue') },
+        { path: 'logs',        name: 'logs',        component: () => import('@/views/ActivityLogsView.vue') },
         { path: 'super-admin', name: 'super-admin', component: () => import('@/views/SuperAdminView.vue') },
       ],
+    },
+    // Public digital menu — no auth, no sidebar
+    {
+      path: '/menu/:slug',
+      name: 'public-menu',
+      component: () => import('@/views/MenuPublicView.vue'),
     },
     { path: '/:pathMatch(.*)*', redirect: '/app' },
   ],
@@ -48,7 +60,7 @@ const router = createRouter({
 const superAdminRoutes = new Set(['super-admin', 'users'])
 
 // Routes tenant (catalogue, mouvements…) interdites au super_admin
-const tenantRoutes = new Set(['dashboard', 'products', 'caisse', 'ventes', 'clients', 'product-detail', 'movements', 'alerts', 'config'])
+const tenantRoutes = new Set(['dashboard', 'products', 'menu', 'supplements', 'tables', 'consommation', 'caisse', 'ventes', 'clients', 'product-detail', 'movements', 'fournisseurs', 'alerts', 'config', 'logs'])
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()

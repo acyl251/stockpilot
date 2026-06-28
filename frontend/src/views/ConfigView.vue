@@ -1,5 +1,38 @@
 <template>
   <div class="space-y-6">
+
+    <!-- Secteur d'activité -->
+    <div class="card">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-semibold text-navy">Secteur d'activité</h2>
+        <span class="text-xs px-2 py-0.5 rounded-full font-medium"
+          :class="org.secteur === 'restauration' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'">
+          {{ org.secteur === 'restauration' ? 'Restauration' : 'Commerce' }}
+        </span>
+      </div>
+      <p class="text-sm text-slate-500 mb-4">
+        Le secteur détermine les fonctionnalités disponibles.
+        <strong>Restauration</strong> active les fiches techniques (produits composés).
+      </p>
+      <div class="flex items-center gap-4">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" v-model="org.secteur" value="commerce" class="accent-gold" />
+          <span class="text-sm font-medium text-slate-700">Commerce</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" v-model="org.secteur" value="restauration" class="accent-gold" />
+          <span class="text-sm font-medium text-slate-700">Restauration</span>
+        </label>
+      </div>
+      <div class="flex items-center gap-3 mt-4">
+        <button @click="saveSecteur" :disabled="secteurSaving" class="btn-primary disabled:opacity-60">
+          {{ secteurSaving ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+        <span v-if="secteurSaved" class="text-emerald-600 text-sm">✓ Enregistré</span>
+        <span v-if="secteurError" class="text-red-500 text-sm">{{ secteurError }}</span>
+      </div>
+    </div>
+
     <!-- Informations de facturation (apparaissent sur les factures PDF) -->
     <div class="card">
       <div class="flex items-center justify-between mb-1">
@@ -100,6 +133,98 @@
       </div>
     </div>
 
+    <!-- ── Imprimante thermique ──────────────────────────────────────────── -->
+    <div class="card border-t border-slate-200 pt-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-navy">Imprimante thermique</h2>
+        <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-slate-100 text-slate-600">Format papier</span>
+      </div>
+      <p class="text-sm text-slate-500 mb-3">Sélectionnez le format de papier utilisé par votre imprimante pour optimiser la mise en page des reçus et bons de cuisine.</p>
+      <div class="flex gap-3">
+        <button
+          v-for="opt in [{ value: '58mm', label: '58 mm', desc: 'Petite caisse' }, { value: '80mm', label: '80 mm', desc: 'Standard' }]"
+          :key="opt.value"
+          @click="onPrinterWidthChange(opt.value as PrinterWidth)"
+          :class="['flex-1 rounded-lg border-2 py-3 px-4 text-center transition-all',
+                   printerWidth === opt.value
+                     ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
+                     : 'border-slate-200 hover:border-slate-300 text-slate-600']"
+        >
+          <div class="font-semibold text-base">{{ opt.label }}</div>
+          <div class="text-xs mt-0.5 opacity-70">{{ opt.desc }}</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Menu digital (restauration uniquement) ─────────────────────── -->
+    <div v-if="auth.isRestauration" class="card border-t border-slate-200 pt-6">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-lg font-semibold text-navy">Menu digital</h2>
+        <span class="text-xs px-2 py-0.5 rounded-full font-medium bg-amber-100 text-amber-700">QR Code</span>
+      </div>
+      <p class="text-sm text-slate-500 mb-4">
+        Partagez ce QR code avec vos clients pour qu'ils puissent consulter votre menu directement depuis leur téléphone.
+      </p>
+
+      <div v-if="!org.slug" class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700 mb-4">
+        ⚠ Enregistrez d'abord vos informations de facturation (raison sociale) pour activer le menu digital.
+      </div>
+
+      <template v-else>
+        <div class="flex flex-col sm:flex-row gap-6 items-start">
+          <!-- QR Code -->
+          <div class="flex flex-col items-center gap-3 flex-shrink-0">
+            <div class="bg-white border-2 border-slate-200 rounded-xl p-3 shadow-sm">
+              <img v-if="qrDataUrl" :src="qrDataUrl" alt="QR Code" class="w-40 h-40" />
+              <div v-else class="w-40 h-40 bg-slate-100 rounded flex items-center justify-center text-slate-400 text-xs">
+                Génération…
+              </div>
+            </div>
+          </div>
+
+          <!-- Lien + boutons -->
+          <div class="flex-1 space-y-3">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">Lien du menu public</label>
+              <div class="flex items-center gap-2">
+                <input :value="menuUrl" readonly
+                  class="border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm w-full text-slate-600 font-mono" />
+              </div>
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button @click="copyLink"
+                class="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-300 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+                </svg>
+                {{ linkCopied ? 'Copié !' : 'Copier le lien' }}
+              </button>
+
+              <button @click="downloadQr"
+                class="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-slate-300 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Télécharger QR
+              </button>
+
+              <a :href="menuUrl" target="_blank" rel="noopener"
+                class="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-navy text-white text-sm font-medium hover:bg-navy/90 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                </svg>
+                Aperçu
+              </a>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
     <!-- Type form modal -->
     <TypeFormModal v-if="showTypeForm" @close="showTypeForm = false" @saved="onTypeSaved" />
 
@@ -126,27 +251,93 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useProductsStore } from '@/stores/products'
+import { useAuthStore } from '@/stores/auth'
 import { categoriesApi, organisationApi } from '@/services/api'
 import TypeFormModal from '@/components/TypeFormModal.vue'
+import QRCode from 'qrcode'
+import { getPrinterWidth, setPrinterWidth, type PrinterWidth } from '@/utils/print'
 
 const store        = useProductsStore()
+const auth         = useAuthStore()
 const types        = ref<any[]>([])
 const categories   = ref<any[]>([])
 const loading      = ref(true)
 
-// Informations de facturation
-const org      = ref<any>({ nom: '', matricule_fiscal: '', telephone: '', adresse: '', email_contact: '' })
-const orgSaving = ref(false)
-const orgSaved  = ref(false)
-const orgError  = ref('')
+// Informations de facturation + secteur
+const org         = ref<any>({ nom: '', secteur: 'commerce', matricule_fiscal: '', telephone: '', adresse: '', email_contact: '' })
+const orgSaving   = ref(false)
+const orgSaved    = ref(false)
+const orgError    = ref('')
+const secteurSaving = ref(false)
+const secteurSaved  = ref(false)
+const secteurError  = ref('')
+
+// ── Imprimante thermique ──────────────────────────────────────────────────────
+const printerWidth = ref<PrinterWidth>(getPrinterWidth())
+function onPrinterWidthChange(w: PrinterWidth) {
+  printerWidth.value = w
+  setPrinterWidth(w)
+}
+
+// ── QR Code / Menu digital ────────────────────────────────────────────────────
+const qrDataUrl  = ref<string | null>(null)
+const linkCopied = ref(false)
+
+const menuUrl = computed(() =>
+  org.value.slug ? `${window.location.origin}/menu/${org.value.slug}` : ''
+)
+
+async function generateQr() {
+  if (! org.value.slug) return
+  try {
+    qrDataUrl.value = await QRCode.toDataURL(menuUrl.value, {
+      width: 200,
+      margin: 2,
+      color: { dark: '#1e293b', light: '#ffffff' },
+    })
+  } catch { /* ignore */ }
+}
+
+async function copyLink() {
+  if (! menuUrl.value) return
+  await navigator.clipboard.writeText(menuUrl.value)
+  linkCopied.value = true
+  setTimeout(() => (linkCopied.value = false), 2000)
+}
+
+function downloadQr() {
+  if (! qrDataUrl.value) return
+  const a = document.createElement('a')
+  a.href = qrDataUrl.value
+  a.download = `menu-qr-${org.value.slug ?? 'restaurant'}.png`
+  a.click()
+}
 
 async function loadOrg() {
   try {
     const { data } = await organisationApi.get()
     org.value = data
+    await generateQr()
   } catch { /* ignore */ }
+}
+
+async function saveSecteur() {
+  secteurSaving.value = true
+  secteurSaved.value  = false
+  secteurError.value  = ''
+  try {
+    await organisationApi.update({ secteur: org.value.secteur })
+    // Refresh auth so isRestauration computed updates immediately
+    await auth.fetchMe()
+    secteurSaved.value = true
+    setTimeout(() => (secteurSaved.value = false), 3000)
+  } catch (e: any) {
+    secteurError.value = e.response?.data?.message ?? 'Erreur lors de l\'enregistrement.'
+  } finally {
+    secteurSaving.value = false
+  }
 }
 
 async function saveOrg() {
@@ -154,12 +345,15 @@ async function saveOrg() {
   orgSaved.value = false
   orgError.value = ''
   try {
-    await organisationApi.update({
+    const { data } = await organisationApi.update({
       nom: org.value.nom,
       matricule_fiscal: org.value.matricule_fiscal || null,
       telephone: org.value.telephone || null,
       adresse: org.value.adresse || null,
     })
+    // Refresh slug in case nom changed
+    org.value.slug = data.slug
+    await generateQr()
     orgSaved.value = true
     setTimeout(() => (orgSaved.value = false), 3000)
   } catch (e: any) {

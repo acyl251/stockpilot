@@ -10,6 +10,7 @@ use App\Models\StockMovement;
 use App\Models\Scopes\TenantScope;
 use App\Models\User;
 use App\Services\CatalogSeederService;
+use App\Services\RestaurantCategoryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -20,6 +21,7 @@ class SuperAdminController extends Controller
 {
     public function __construct(
         private CatalogSeederService $catalogSeeder,
+        private RestaurantCategoryService $restaurantCategories,
     ) {}
 
     public function dashboard(): JsonResponse
@@ -267,7 +269,7 @@ class SuperAdminController extends Controller
         DB::transaction(function () use ($data, &$org, &$user) {
             $org = Organisation::create([
                 'nom'                 => $data['org_nom'],
-                'secteur'             => $data['org_secteur'] ?? null,
+                'secteur'             => isset($data['org_secteur']) ? strtolower(trim($data['org_secteur'])) : null,
                 'email_contact'       => $data['org_email'],
                 'telephone'           => $data['org_telephone'] ?? null,
                 'plan_id'             => $data['plan_id'],
@@ -286,7 +288,12 @@ class SuperAdminController extends Controller
             ]);
         });
 
-        // ── 2. AI catalog seeding (outside the transaction) ───────────────────
+        // ── 2. Restauration base categories (always, no AI required) ─────────
+        if ($org->isRestauration()) {
+            $this->restaurantCategories->seedForOrganisation($org->id);
+        }
+
+        // ── 3. AI catalog seeding (outside the transaction) ───────────────────
         $seed = ['types' => 0, 'categories' => 0, 'products' => 0];
 
         if (!empty($data['org_secteur']) && $org->load('plan')->hasAIEnabled()) {
