@@ -8,6 +8,7 @@ use App\Models\Organisation;
 use App\Models\RestaurantTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TableController extends Controller
 {
@@ -48,7 +49,13 @@ class TableController extends Controller
                 'active' => true,
             ]));
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            Log::error('[TableController::store] ' . $e->getMessage(), [
+                'class'   => get_class($e),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'org_id'  => app()->bound('current_organisation_id') ? app('current_organisation_id') : null,
+            ]);
+            return response()->json(['message' => $e->getMessage()], 500);
         }
 
         return response()->json($this->format($table), 201);

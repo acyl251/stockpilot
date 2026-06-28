@@ -687,5 +687,8 @@ async function printReceiptFromSaleId(saleId: number, tableLabel?: string) {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
-onMounted(() => { fetchTables(); fetchMenuItems() })
+onMounted(() => {
+  fetchTables().catch(() => {})
+  fetchMenuItems().catch(() => {})
+})
 </script>
