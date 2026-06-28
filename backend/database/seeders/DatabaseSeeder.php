@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
         $org = Organisation::create([
             'plan_id'              => $plan->id,
             'nom'                  => 'Entreprise Test SARL',
-            'secteur'              => 'Commerce de détail',
+            'secteur'              => 'restauration',
             'email_contact'        => 'contact@test.tn',
             'telephone'            => '+216 71 000 000',
             'onboarding_complete'  => true,
