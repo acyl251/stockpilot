@@ -11,7 +11,7 @@
           class="px-4 py-2 text-sm font-medium border border-navy text-navy rounded-lg hover:bg-navy hover:text-white transition-colors">
           🥡 À emporter
         </button>
-        <button @click="openTableModal" class="btn-primary text-sm">+ Nouvelle table</button>
+        <button @click="openTableModal()" class="btn-primary text-sm">+ Nouvelle table</button>
       </div>
     </div>
 
@@ -19,7 +19,7 @@
 
     <div v-else-if="tables.length === 0" class="card text-center py-16">
       <p class="text-slate-400 mb-3">Aucune table configurée.</p>
-      <button @click="openTableModal" class="btn-primary text-sm">+ Ajouter une table</button>
+      <button @click="openTableModal()" class="btn-primary text-sm">+ Ajouter une table</button>
     </div>
 
     <!-- Tables grid -->
@@ -47,6 +47,18 @@
             <p class="text-xs text-slate-400">{{ table.current_order.item_count }} article(s)</p>
           </div>
         </template>
+
+        <!-- Modifier / Supprimer (table libre uniquement) -->
+        <div v-if="table.statut === 'libre'" class="flex gap-2 mt-3 pt-3 border-t border-slate-100">
+          <button @click.stop="openTableModal(table)"
+            class="flex-1 text-xs py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:border-navy hover:text-navy transition">
+            Modifier
+          </button>
+          <button @click.stop="deleteTable(table)"
+            class="flex-1 text-xs py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 transition">
+            Supprimer
+          </button>
+        </div>
       </div>
     </div>
 
@@ -54,7 +66,7 @@
     <div v-if="showTableModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-40 p-4">
       <div class="bg-white rounded-xl shadow-xl w-full max-w-sm" @click.stop>
         <div class="flex items-center justify-between p-5 border-b">
-          <h2 class="font-bold text-navy">Nouvelle table</h2>
+          <h2 class="font-bold text-navy">{{ editingTable ? `Table ${editingTable.numero}` : 'Nouvelle table' }}</h2>
           <button @click="showTableModal = false" class="text-slate-400 hover:text-slate-600 text-xl">×</button>
         </div>
         <div class="p-5 space-y-4">
@@ -74,7 +86,7 @@
           <button @click="showTableModal = false" class="flex-1 btn-secondary text-sm">Annuler</button>
           <button @click="saveTable" :disabled="!tableForm.numero || savingTable"
             class="flex-1 btn-primary text-sm disabled:opacity-50">
-            {{ savingTable ? 'Enregistrement…' : 'Créer' }}
+            {{ savingTable ? 'Enregistrement…' : editingTable ? 'Modifier' : 'Créer' }}
           </button>
         </div>
       </div>
@@ -404,6 +416,7 @@ const supplements     = ref<Supplement[]>([])
 const loadingProducts = ref(false)
 
 const showTableModal  = ref(false)
+const editingTable    = ref<RestaurantTable | null>(null)
 const tableForm       = ref({ numero: '', capacite: null as number | null })
 const savingTable     = ref(false)
 const tableModalError = ref('')
@@ -467,9 +480,10 @@ async function fetchMenuItems() {
   } finally { loadingProducts.value = false }
 }
 
-// ─── Table creation ───────────────────────────────────────────────────────────
-function openTableModal() {
-  tableForm.value    = { numero: '', capacite: null }
+// ─── Table create / edit / delete ────────────────────────────────────────────
+function openTableModal(table?: RestaurantTable) {
+  editingTable.value    = table ?? null
+  tableForm.value       = { numero: table?.numero ?? '', capacite: table?.capacite ?? null }
   tableModalError.value = ''
   showTableModal.value  = true
 }
@@ -479,7 +493,11 @@ async function saveTable() {
   savingTable.value     = true
   tableModalError.value = ''
   try {
-    await tablesApi.create(tableForm.value)
+    if (editingTable.value) {
+      await tablesApi.update(editingTable.value.id, tableForm.value)
+    } else {
+      await tablesApi.create(tableForm.value)
+    }
     showTableModal.value = false
     await fetchTables()
   } catch (e: any) {
@@ -487,10 +505,24 @@ async function saveTable() {
     tableModalError.value =
       data?.errors?.numero?.[0] ??
       data?.message ??
-      'Erreur lors de la création de la table.'
+      (editingTable.value ? 'Erreur lors de la modification.' : 'Erreur lors de la création.')
     console.error('[saveTable]', data ?? e)
   } finally {
     savingTable.value = false
+  }
+}
+
+async function deleteTable(table: RestaurantTable) {
+  if (table.statut === 'occupee') {
+    alert('Impossible de supprimer une table occupée.')
+    return
+  }
+  if (!confirm(`Supprimer la table ${table.numero} ?`)) return
+  try {
+    await tablesApi.destroy(table.id)
+    await fetchTables()
+  } catch (e: any) {
+    alert(e.response?.data?.message ?? 'Erreur lors de la suppression.')
   }
 }
 
