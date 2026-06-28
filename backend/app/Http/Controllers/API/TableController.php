@@ -8,6 +8,7 @@ use App\Models\Organisation;
 use App\Models\RestaurantTable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class TableController extends Controller
@@ -25,9 +26,12 @@ class TableController extends Controller
     {
         if ($err = $this->requireRestauration()) return $err;
 
+        // SQLite: CAST(... AS INTEGER) — MySQL/Oracle: CAST(... AS SIGNED)
+        $castInt = DB::connection()->getDriverName() === 'sqlite' ? 'INTEGER' : 'SIGNED';
+
         $tables = RestaurantTable::with(['currentOrder.items'])
             ->where('active', true)
-            ->orderByRaw("CAST(numero AS INTEGER) ASC, numero ASC")
+            ->orderByRaw("CAST(numero AS {$castInt}) ASC, numero ASC")
             ->get()
             ->map(fn ($t) => $this->format($t));
 
