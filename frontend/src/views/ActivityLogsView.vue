@@ -13,6 +13,11 @@
       </button>
     </div>
 
+    <!-- Erreur chargement -->
+    <div v-if="loadError" class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
+      {{ loadError }}
+    </div>
+
     <!-- Résumé -->
     <div class="grid grid-cols-3 gap-4">
       <div class="card text-center py-4">
@@ -171,6 +176,7 @@ const logs        = ref<any[]>([])
 const users       = ref<any[]>([])
 const summary     = ref<any>({})
 const loading     = ref(false)
+const loadError   = ref('')
 const total       = ref(0)
 const currentPage = ref(1)
 const lastPage    = ref(1)
@@ -238,7 +244,8 @@ function onSearch() {
 }
 
 async function load(page = 1) {
-  loading.value = true
+  loading.value  = true
+  loadError.value = ''
   try {
     const { data } = await activityLogsApi.list({
       page,
@@ -258,6 +265,8 @@ async function load(page = 1) {
     if (data.users?.length) {
       users.value = data.users
     }
+  } catch (e: any) {
+    loadError.value = e?.response?.data?.message ?? `Erreur serveur (${e?.response?.status ?? 'réseau'})`
   } finally {
     loading.value = false
   }
