@@ -64,7 +64,16 @@ class UserController extends Controller
             $data['password'] = Hash::make($data['password']);
         }
 
-        $user->update($data);
+        try {
+            $user->update($data);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+            ], 500);
+        }
+
         return response()->json($user->only(['id', 'nom', 'prenom', 'email', 'role', 'actif']));
     }
 

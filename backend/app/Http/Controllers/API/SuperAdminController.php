@@ -328,7 +328,15 @@ class SuperAdminController extends Controller
         if (array_key_exists('actif', $data)) $user->actif = $data['actif'];
         if (!empty($data['password'])) $user->password = Hash::make($data['password']);
 
-        $user->save();
+        try {
+            $user->save();
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'file'  => $e->getFile(),
+                'line'  => $e->getLine(),
+            ], 500);
+        }
 
         return response()->json($user->only(['id', 'nom', 'prenom', 'email', 'role', 'actif']));
     }
