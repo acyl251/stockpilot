@@ -193,7 +193,9 @@ async function toggleUser(u: any) {
   const action = u.actif ? 'Désactiver' : 'Activer'
   if (!confirm(`${action} le compte de ${u.prenom} ${u.nom} ?`)) return
   try {
-    const { data } = await usersApi.update(u.id, { actif: !u.actif })
+    // Super-admin voit des users d'autres orgs → passer par la route super-admin
+    const api = auth.isSuperAdmin ? superAdminApi.updateUser : usersApi.update
+    const { data } = await api(u.id, { actif: !u.actif })
     u.actif = data.actif
   } catch (e: any) {
     alert(e.response?.data?.message ?? 'Erreur.')

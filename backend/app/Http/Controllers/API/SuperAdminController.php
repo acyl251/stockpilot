@@ -318,12 +318,14 @@ class SuperAdminController extends Controller
             'email'    => "sometimes|required|email|unique:users,email,{$id}",
             'role'     => 'sometimes|required|in:admin,gestionnaire,caissier,operateur',
             'password' => 'sometimes|nullable|string|min:8',
+            'actif'    => 'sometimes|boolean',
         ]);
 
         if (isset($data['prenom']))    $user->prenom   = $data['prenom'];
         if (isset($data['nom']))       $user->nom      = $data['nom'];
         if (isset($data['email']))     $user->email    = $data['email'];
         if (isset($data['role']))      $user->role     = $data['role'];
+        if (array_key_exists('actif', $data)) $user->actif = $data['actif'];
         if (!empty($data['password'])) $user->password = Hash::make($data['password']);
 
         $user->save();
