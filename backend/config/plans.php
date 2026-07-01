@@ -25,7 +25,7 @@ return [
         'tables'       => 30,
         'categories'   => 50,
     ],
-    'enterprise' => [
+    'entreprise' => [
         'produits'     => -1,
         'utilisateurs' => -1,
         'ventes_mois'  => -1,

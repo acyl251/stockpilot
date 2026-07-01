@@ -52,10 +52,12 @@
               <div class="form-group">
                 <label>Plan souhaité</label>
                 <div class="plan-select">
-                  <button type="button" v-for="p in ['starter','pro','enterprise']" :key="p"
-                    :class="['plan-opt', { active: form.plan_souhaite === p }]"
-                    @click="form.plan_souhaite = p">
-                    {{ p.charAt(0).toUpperCase() + p.slice(1) }}
+                  <button type="button"
+                    v-for="[slug, label] in [['starter','Starter'],['essentiel','Essentiel'],['pro','Pro'],['entreprise','Entreprise']]"
+                    :key="slug"
+                    :class="['plan-opt', { active: form.plan_souhaite === slug }]"
+                    @click="form.plan_souhaite = slug">
+                    {{ label }}
                   </button>
                 </div>
               </div>
@@ -264,21 +266,29 @@
         <p class="section-sub">Adapté à toutes les tailles d'entreprises.</p>
         <!-- Skeleton pendant le chargement -->
         <div v-if="!plansLoaded" class="plans-grid">
-          <div v-for="i in 3" :key="i" class="plan-card" style="opacity:.4">
+          <div v-for="i in 4" :key="i" class="plan-card" style="opacity:.4">
             <div style="background:rgba(255,255,255,.1);height:16px;border-radius:4px;width:60%;margin-bottom:16px"></div>
             <div style="background:rgba(255,255,255,.1);height:40px;border-radius:4px;width:40%;margin-bottom:20px"></div>
-            <div v-for="j in 4" :key="j" style="background:rgba(255,255,255,.07);height:12px;border-radius:4px;margin-bottom:10px"></div>
+            <div v-for="j in 5" :key="j" style="background:rgba(255,255,255,.07);height:12px;border-radius:4px;margin-bottom:10px"></div>
           </div>
         </div>
 
         <div v-else class="plans-grid">
-          <div class="plan-card" v-for="(plan, i) in plansList" :key="plan.id"
-            :class="{ featured: i === 1 }">
-            <div class="plan-badge" v-if="i === 1">Populaire</div>
+          <div class="plan-card" v-for="plan in plansList" :key="plan.id"
+            :class="{ featured: plan.nom.toLowerCase() === 'pro' }">
+            <div class="plan-badge" v-if="plan.nom.toLowerCase() === 'pro'">Populaire</div>
             <div class="plan-name">{{ plan.nom }}</div>
             <div class="plan-price">
-              <span class="price-amount">{{ plan.prix_mensuel }}</span>
-              <span class="price-unit">TND/mois</span>
+              <template v-if="plan.prix_mensuel === 0">
+                <span class="price-amount">Gratuit</span>
+              </template>
+              <template v-else>
+                <div class="price-annual-row">
+                  <span class="price-amount">{{ plan.prix_mensuel * 12 }}</span>
+                  <span class="price-unit">DT/an</span>
+                </div>
+                <div class="price-monthly">{{ plan.prix_mensuel }} DT/mois</div>
+              </template>
             </div>
             <ul class="plan-features">
               <li v-for="f in (planFeatures[plan.nom.toLowerCase()] ?? [])" :key="f">
@@ -290,9 +300,10 @@
                 <span style="color:#f59e0b">IA activée</span>
               </li>
             </ul>
-            <button type="button" class="plan-btn" :class="{ 'plan-btn-primary': i === 1 }"
+            <button type="button" class="plan-btn"
+              :class="{ 'plan-btn-primary': plan.nom.toLowerCase() === 'pro' }"
               @click="openModal(plan.nom.toLowerCase())">
-              Commencer
+              {{ plan.prix_mensuel === 0 ? 'Commencer gratuitement' : 'Commencer' }}
             </button>
           </div>
         </div>
@@ -401,7 +412,7 @@ async function submitDemo() {
 const statsList = [
   { value: '100%', label: 'Isolation des données',    desc: 'Multi-tenant garanti par TenantScope' },
   { value: '5',    label: 'Fonctions IA',              desc: 'Prévisions, anomalies, KPIs prédictifs' },
-  { value: '3',    label: 'Plans disponibles',         desc: 'Starter · Pro · Enterprise' },
+  { value: '4',    label: 'Plans disponibles',         desc: 'Starter · Essentiel · Pro · Entreprise' },
   { value: '<1s',  label: 'Temps de réponse API',      desc: 'Grâce au cache Laravel et Eloquent' },
 ]
 
@@ -415,9 +426,10 @@ const plansList   = ref<any[]>([])
 const plansLoaded = ref(false)
 
 const planFeatures: Record<string, string[]> = {
-  starter:    ['5 utilisateurs', '100 produits', 'Tableau de bord', 'Mouvements illimités', 'Support email'],
-  pro:        ['20 utilisateurs', '500 produits', 'Tableau de bord avancé', 'IA activée', 'Prévisions 30j', 'Détection anomalies'],
-  enterprise: ['100 utilisateurs', '5 000 produits', 'Toutes fonctionnalités IA', 'Support prioritaire', 'Déploiement dédié'],
+  starter:    ['1 utilisateur', '30 produits', '5 tables', '100 ventes/mois', 'Support email'],
+  essentiel:  ['2 utilisateurs', '200 produits', '10 tables', '1 000 ventes/mois', 'Factures PDF légales', 'Alertes WhatsApp', 'Support email'],
+  pro:        ['5 utilisateurs', '500 produits', '30 tables', '5 000 ventes/mois', 'Module restauration', 'QR code menu digital', 'Dashboard avancé', 'Support prioritaire'],
+  entreprise: ['Utilisateurs illimités', 'Produits illimités', 'Tables illimitées', 'Ventes illimitées', 'Multi-points de vente', 'Accompagnement & formation', 'Support dédié'],
 }
 </script>
 
@@ -707,7 +719,7 @@ const planFeatures: Record<string, string[]> = {
 
 /* ═══════════════ PLANS ═══════════════ */
 .plans { padding: 100px 0; }
-.plans-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 20px; margin-top: 48px; }
+.plans-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-top: 48px; }
 .plan-card {
   background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
   border-radius: 20px; padding: 32px 28px; position: relative;
@@ -725,10 +737,12 @@ const planFeatures: Record<string, string[]> = {
   padding: 4px 16px; border-radius: 999px; font-size: 11px; font-weight: 800;
   white-space: nowrap;
 }
-.plan-name { font-size: 14px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
-.plan-price { margin-bottom: 28px; }
-.price-amount { font-size: 48px; font-weight: 900; color: #fff; letter-spacing: -2px; }
-.price-unit   { font-size: 14px; color: #64748b; margin-left: 4px; }
+.plan-name { font-size: 13px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+.plan-price { margin-bottom: 24px; }
+.price-annual-row { display: flex; align-items: baseline; gap: 4px; }
+.price-amount { font-size: 42px; font-weight: 900; color: #fff; letter-spacing: -2px; }
+.price-unit   { font-size: 13px; color: #64748b; }
+.price-monthly { font-size: 12px; color: #475569; margin-top: 2px; }
 .plan-features { list-style: none; padding: 0; margin-bottom: 28px; display: flex; flex-direction: column; gap: 10px; }
 .plan-features li { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: #94a3b8; }
 .plan-features li svg { color: #34d399; flex-shrink: 0; }
@@ -776,15 +790,18 @@ const planFeatures: Record<string, string[]> = {
 .footer-link { font-size: 13px; color: #f59e0b; text-decoration: none; font-weight: 600; }
 
 /* ═══════════════ RESPONSIVE ═══════════════ */
+@media (max-width: 1100px) {
+  .plans-grid { grid-template-columns: repeat(2,1fr); }
+}
 @media (max-width: 900px) {
   .features-grid { grid-template-columns: 1fr 1fr; }
   .feat-main { grid-column: span 2; }
   .stats-grid  { grid-template-columns: repeat(2,1fr); }
-  .plans-grid  { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
   .steps-grid  { grid-template-columns: 1fr; }
   .nav-links   { display: none; }
 }
 @media (max-width: 600px) {
+  .plans-grid { grid-template-columns: 1fr; max-width: 400px; margin-left: auto; margin-right: auto; }
   .features-grid { grid-template-columns: 1fr; }
   .feat-main { grid-column: span 1; }
   .stats-grid { grid-template-columns: 1fr 1fr; }

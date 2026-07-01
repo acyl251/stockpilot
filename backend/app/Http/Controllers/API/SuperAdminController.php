@@ -244,6 +244,7 @@ class SuperAdminController extends Controller
     public function plans(): JsonResponse
     {
         $plans = Plan::where('actif', true)
+            ->orderBy('prix_mensuel')
             ->get(['id', 'nom', 'prix_mensuel', 'ia_activee', 'max_utilisateurs', 'max_produits']);
 
         return response()->json($plans);
