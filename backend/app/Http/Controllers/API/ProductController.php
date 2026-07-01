@@ -7,6 +7,7 @@ use App\Http\Resources\ProductResource;
 use App\Models\Organisation;
 use App\Models\Product;
 use App\Services\ActivityLogService;
+use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -56,7 +57,12 @@ class ProductController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $org          = Organisation::findOrFail(app('current_organisation_id'));
+        $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
+
+        if (!PlanLimitService::check('produits', $org)) {
+            return response()->json(PlanLimitService::limitResponse('produits', $org), 403);
+        }
+
         $isIngredient = $org->isRestauration() && ($request->input('type', 'simple') === Product::TYPE_SIMPLE);
 
         $validated = $request->validate([

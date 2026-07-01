@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Organisation;
 use App\Models\User;
+use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,6 +25,11 @@ class UserController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
+        if (!PlanLimitService::check('utilisateurs', $org)) {
+            return response()->json(PlanLimitService::limitResponse('utilisateurs', $org), 403);
+        }
+
         $data = $request->validate([
             'nom'     => 'required|string|max:100',
             'prenom'  => 'required|string|max:100',

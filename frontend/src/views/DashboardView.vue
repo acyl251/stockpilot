@@ -40,6 +40,37 @@
       <KpiCard label="En alerte"           :value="kpis.total_alertes"         icon="⚠️" color="amber" />
     </div>
 
+    <!-- Carte Plan & Utilisation -->
+    <div v-if="planUsage" class="card">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="font-semibold text-navy">Votre plan</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Plan actuel : <span class="font-medium text-gold">{{ planUsage.plan }}</span></p>
+        </div>
+        <RouterLink v-if="hasNearLimit" to="/app/config"
+          class="text-xs bg-amber-100 text-amber-700 font-medium px-3 py-1.5 rounded-full hover:bg-amber-200 transition-colors">
+          Upgrader mon plan →
+        </RouterLink>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div v-for="(r, key) in planUsage.resources" :key="key" class="bg-slate-50 rounded-lg px-3 py-2.5">
+          <div class="flex items-center justify-between text-xs mb-1.5">
+            <span class="text-slate-500 capitalize">{{ resourceLabels[key] ?? key }}</span>
+            <span v-if="r.limite === -1" class="text-emerald-600 font-medium">Illimité</span>
+            <span v-else :class="r.percent >= 80 ? 'text-red-600 font-semibold' : 'text-slate-700'">
+              {{ r.usage }} / {{ r.limite }}
+            </span>
+          </div>
+          <div v-if="r.limite !== -1" class="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+            <div class="h-1.5 rounded-full transition-all"
+              :class="r.percent >= 80 ? 'bg-red-400' : r.percent >= 60 ? 'bg-amber-400' : 'bg-emerald-400'"
+              :style="{ width: r.percent + '%' }" />
+          </div>
+          <div v-else class="h-1.5 bg-emerald-200 rounded-full" />
+        </div>
+      </div>
+    </div>
+
     <!-- Caisse — ventes réelles -->
     <div class="card">
       <div class="flex items-center justify-between mb-4">
@@ -293,7 +324,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAlertsStore } from '@/stores/alerts'
-import { dashboardApi } from '@/services/api'
+import { dashboardApi, planApi } from '@/services/api'
 
 import KpiCard from '@/components/KpiCard.vue'
 import { format } from 'date-fns'
@@ -311,6 +342,22 @@ const kpisIA       = ref<any[]|null>(null)
 const mouvements7j = ref<any[]>([])
 const ca7jDetail   = ref<any[]>([])
 const loading      = ref(true)
+
+// ── Plan usage ───────────────────────────────────────────────────────────────
+const planUsage = ref<any>(null)
+const resourceLabels: Record<string, string> = {
+  produits:     'Produits',
+  utilisateurs: 'Utilisateurs',
+  ventes_mois:  'Ventes ce mois',
+  fournisseurs: 'Fournisseurs',
+  tables:       'Tables',
+  categories:   'Catégories',
+}
+const hasNearLimit = computed(() => {
+  if (!planUsage.value) return false
+  return Object.values(planUsage.value.resources as Record<string, any>)
+    .some((r: any) => r.limite !== -1 && r.percent >= 80)
+})
 
 const bienvenueIA  = ref<any|null>(null)
 const welcomeDismissed = ref(false)
@@ -366,5 +413,9 @@ onMounted(async () => {
   bienvenueIA.value  = dashRes.data.bienvenue_ia ?? null
   welcomeDismissed.value = localStorage.getItem(welcomeKey.value) === '1'
   loading.value = false
+
+  if (!auth.isSuperAdmin) {
+    try { planUsage.value = (await planApi.usage()).data } catch { /* non-fatal */ }
+  }
 })
 </script>

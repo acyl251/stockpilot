@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Fournisseur;
+use App\Models\Organisation;
+use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,6 +19,11 @@ class FournisseurController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
+        if (!PlanLimitService::check('fournisseurs', $org)) {
+            return response()->json(PlanLimitService::limitResponse('fournisseurs', $org), 403);
+        }
+
         $data = $request->validate([
             'nom'       => 'required|string|max:200',
             'telephone' => 'nullable|string|max:30',

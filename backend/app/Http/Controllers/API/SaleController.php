@@ -4,10 +4,12 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Organisation;
 use App\Models\Sale;
 use App\Services\ActivityLogService;
 use App\Services\InvoiceService;
 use App\Services\OrderService;
+use App\Services\PlanLimitService;
 use App\Services\SaleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -84,6 +86,11 @@ class SaleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
+        if (!PlanLimitService::check('ventes_mois', $org)) {
+            return response()->json(PlanLimitService::limitResponse('ventes_mois', $org), 403);
+        }
+
         $data = $request->validate([
             'items'                    => 'required|array|min:1',
             'items.*.product_id'       => 'nullable|integer',

@@ -368,8 +368,18 @@
             <p><span class="font-medium text-slate-600">Inscrite le :</span> {{ formatDate(org.created_at) }}</p>
           </div>
 
-          <!-- Action suppression -->
-          <div class="pt-2 border-t border-slate-100">
+          <!-- Actions : changer plan + supprimer -->
+          <div class="pt-2 border-t border-slate-100 space-y-2">
+            <div class="flex items-center gap-2">
+              <select
+                :value="org.plan?.id"
+                @change="changePlan(org, ($event.target as HTMLSelectElement).value)"
+                class="flex-1 border rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              >
+                <option v-for="p in plans" :key="p.id" :value="p.id">{{ p.nom }}</option>
+              </select>
+              <span class="text-xs text-slate-400">Plan</span>
+            </div>
             <button
               @click="deleteOrg(org)"
               class="w-full text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg py-1.5 transition-colors"
@@ -578,6 +588,10 @@ const usersLoading   = ref(false)
 
 async function switchToSocietes() {
   activeTab.value = 'societes'
+  if (!plans.value.length) {
+    const { data: p } = await superAdminApi.plans()
+    plans.value = p
+  }
   if (orgs.value.length) return
   orgsLoading.value = true
   try {
@@ -585,6 +599,15 @@ async function switchToSocietes() {
     orgs.value = d
   } finally {
     orgsLoading.value = false
+  }
+}
+
+async function changePlan(org: any, planId: string | number) {
+  try {
+    const { data } = await superAdminApi.updateOrg(org.id, { plan_id: Number(planId) })
+    org.plan = data.organisation.plan
+  } catch (e: any) {
+    alert(e?.response?.data?.message ?? 'Erreur lors du changement de plan.')
   }
 }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Organisation;
 use App\Models\RestaurantTable;
+use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,11 @@ class TableController extends Controller
     public function store(Request $request): JsonResponse
     {
         if ($err = $this->requireRestauration()) return $err;
+
+        $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
+        if (!PlanLimitService::check('tables', $org)) {
+            return response()->json(PlanLimitService::limitResponse('tables', $org), 403);
+        }
 
         $validated = $request->validate([
             'numero'   => 'required|string|max:50',

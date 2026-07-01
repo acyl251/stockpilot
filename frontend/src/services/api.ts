@@ -174,6 +174,7 @@ export const superAdminApi = {
   users:              ()                       => api.get('/super-admin/users'),
   plans:              ()                       => api.get('/super-admin/plans'),
   createOrg:          (data: object)           => api.post('/super-admin/organisations', data),
+  updateOrg:          (id: number, data: object)   => api.patch(`/super-admin/organisations/${id}`, data),
   updateUser:         (id: number, data: object)   => api.patch(`/super-admin/users/${id}`, data),
   destroyUser:        (id: number)                 => api.delete(`/super-admin/users/${id}`),
   destroyOrg:         (id: number)                 => api.delete(`/super-admin/organisations/${id}`),
@@ -182,6 +183,11 @@ export const superAdminApi = {
 }
 
 // ─── Fournisseurs ─────────────────────────────────────────────────────────────
+// ─── Plan usage ───────────────────────────────────────────────────────────────
+export const planApi = {
+  usage: () => api.get('/plan/usage'),
+}
+
 export const fournisseursApi = {
   list:    ()                          => api.get('/fournisseurs'),
   create:  (data: object)              => api.post('/fournisseurs', data),

@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\ActivityLogController;
 use App\Http\Controllers\API\AlertController;
 use App\Http\Controllers\API\CommandeFournisseurController;
+use App\Http\Controllers\API\PlanController;
 use App\Http\Controllers\API\ConsommationController;
 use App\Http\Controllers\API\FournisseurController;
 use App\Http\Controllers\API\PublicMenuController;
@@ -140,6 +141,9 @@ Route::middleware('auth.tenant')->group(function () {
     Route::post('/commandes-fournisseur/{id}/receptionner', [CommandeFournisseurController::class, 'receptionner']);
     Route::delete('/commandes-fournisseur/{id}',            [CommandeFournisseurController::class, 'destroy']);
 
+    // Plan usage
+    Route::get('/plan/usage', [PlanController::class, 'usage']);
+
     // Activity Logs (admin + manager only — enforced in controller)
     Route::get('/activity-logs',        [ActivityLogController::class, 'index']);
     Route::get('/activity-logs/export', [ActivityLogController::class, 'export']);
@@ -159,6 +163,7 @@ Route::middleware('auth.tenant')->group(function () {
         Route::get('/plans',            [SuperAdminController::class, 'plans']);
         Route::patch('/users/{id}',          [SuperAdminController::class, 'updateUser']);
         Route::delete('/users/{id}',         [SuperAdminController::class, 'destroyUser']);
+        Route::patch('/organisations/{id}',  [SuperAdminController::class, 'updateOrganisation']);
         Route::delete('/organisations/{id}', [SuperAdminController::class, 'destroyOrganisation']);
         Route::get('/demo-requests',        [DemoRequestController::class, 'index']);
         Route::patch('/demo-requests/{id}', [DemoRequestController::class, 'updateStatus']);

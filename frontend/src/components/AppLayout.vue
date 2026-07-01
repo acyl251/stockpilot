@@ -1,5 +1,33 @@
 <template>
   <div class="flex h-screen bg-slate-50 overflow-hidden">
+
+    <!-- Modal Limite de plan (global) -->
+    <div v-if="limitStore.visible"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4"
+      @click.self="limitStore.hide()">
+      <div class="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center text-xl flex-shrink-0">🔒</div>
+          <div>
+            <h3 class="font-semibold text-navy text-base">Limite atteinte</h3>
+            <p v-if="limitStore.planName" class="text-xs text-slate-400">Plan {{ limitStore.planName }}</p>
+          </div>
+        </div>
+        <p class="text-slate-600 text-sm mb-5">{{ limitStore.message }}</p>
+        <div class="flex gap-2">
+          <RouterLink to="/app/config"
+            @click="limitStore.hide()"
+            class="flex-1 text-center bg-gold hover:bg-yellow-500 text-white rounded-lg py-2 text-sm font-medium transition-colors">
+            Voir les plans
+          </RouterLink>
+          <button @click="limitStore.hide()"
+            class="flex-1 border rounded-lg py-2 text-sm hover:bg-slate-50 transition-colors">
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Sidebar -->
     <AppSidebar />
 
@@ -49,10 +77,12 @@ import { computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAlertsStore } from '@/stores/alerts'
+import { useLimitStore } from '@/stores/limit'
 import AppSidebar from './AppSidebar.vue'
 
-const auth   = useAuthStore()
-const alerts = useAlertsStore()
+const auth       = useAuthStore()
+const alerts     = useAlertsStore()
+const limitStore = useLimitStore()
 const route  = useRoute()
 const router = useRouter()
 

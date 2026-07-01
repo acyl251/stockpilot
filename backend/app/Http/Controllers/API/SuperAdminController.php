@@ -249,6 +249,23 @@ class SuperAdminController extends Controller
         return response()->json($plans);
     }
 
+    public function updateOrganisation(Request $request, int $id): JsonResponse
+    {
+        $org = Organisation::withoutGlobalScopes()->findOrFail($id);
+
+        $data = $request->validate([
+            'plan_id' => 'required|exists:plans,id',
+        ]);
+
+        $org->plan_id = $data['plan_id'];
+        $org->save();
+
+        return response()->json([
+            'message'      => 'Plan mis à jour.',
+            'organisation' => $org->fresh()->load('plan'),
+        ]);
+    }
+
     public function destroyOrganisation(int $id): JsonResponse
     {
         $currentUser = app('current_user');
