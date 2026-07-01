@@ -157,6 +157,8 @@ Route::middleware('auth.tenant')->group(function () {
         Route::get('/organisations',    [SuperAdminController::class, 'organisations']);
         Route::post('/organisations',   [SuperAdminController::class, 'createOrganisation']);
         Route::get('/plans',            [SuperAdminController::class, 'plans']);
+        Route::patch('/users/{id}',          [SuperAdminController::class, 'updateUser']);
+        Route::delete('/users/{id}',         [SuperAdminController::class, 'destroyUser']);
         Route::get('/demo-requests',        [DemoRequestController::class, 'index']);
         Route::patch('/demo-requests/{id}', [DemoRequestController::class, 'updateStatus']);
     });

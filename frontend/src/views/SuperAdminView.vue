@@ -371,6 +371,48 @@
       </div>
     </template><!-- fin onglet societes -->
 
+    <!-- Modal Modifier utilisateur -->
+    <div v-if="showEditModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 class="text-lg font-semibold text-navy mb-5">Modifier l'utilisateur</h2>
+        <form @submit.prevent="saveUser" class="space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Prénom *</label>
+              <input v-model="editForm.prenom" required class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-600 mb-1">Nom *</label>
+              <input v-model="editForm.nom" required class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Email *</label>
+            <input v-model="editForm.email" type="email" required class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Rôle *</label>
+            <select v-model="editForm.role" required class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
+              <option value="admin">admin</option>
+              <option value="gestionnaire">gestionnaire</option>
+              <option value="caissier">caissier</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-600 mb-1">Nouveau mot de passe <span class="text-slate-400 font-normal">(laisser vide = inchangé)</span></label>
+            <input v-model="editForm.password" type="password" minlength="8" autocomplete="new-password" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+          </div>
+          <p v-if="editError" class="text-red-500 text-xs">{{ editError }}</p>
+          <div class="flex gap-2 pt-1">
+            <button type="button" @click="showEditModal = false" class="flex-1 border rounded-lg py-2 text-sm hover:bg-slate-50">Annuler</button>
+            <button type="submit" :disabled="editSaving" class="flex-1 bg-gold hover:bg-yellow-500 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50">
+              {{ editSaving ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- ── Onglet Utilisateurs ────────────────────────────────────────────── -->
     <template v-if="activeTab === 'utilisateurs'">
       <div v-if="usersLoading" class="text-center py-20 text-slate-400">Chargement…</div>
@@ -415,13 +457,27 @@
                   </span>
                 </td>
                 <td class="px-5 py-2.5">
-                  <button
-                    @click="toggleUser(u)"
-                    :class="u.actif ? 'text-red-500 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-800'"
-                    class="text-xs font-medium hover:underline"
-                  >
-                    {{ u.actif ? 'Désactiver' : 'Activer' }}
-                  </button>
+                  <div class="flex items-center gap-3">
+                    <button
+                      @click="toggleUser(u)"
+                      :class="u.actif ? 'text-red-500 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-800'"
+                      class="text-xs font-medium hover:underline"
+                    >
+                      {{ u.actif ? 'Désactiver' : 'Activer' }}
+                    </button>
+                    <button
+                      @click="openEditUser(u)"
+                      class="text-xs font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      @click="deleteUser(u, org)"
+                      class="text-xs font-medium text-red-500 hover:text-red-700 hover:underline"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -606,6 +662,62 @@ async function toggleUser(u: any) {
     u.actif = d.actif
   } catch (e: any) {
     alert(e.response?.data?.message ?? 'Erreur.')
+  }
+}
+
+// ── Modifier utilisateur ──────────────────────────────────────────────────────
+const showEditModal = ref(false)
+const editingUser   = ref<any>(null)
+const editForm      = ref({ prenom: '', nom: '', email: '', role: '', password: '' })
+const editSaving    = ref(false)
+const editError     = ref('')
+
+function openEditUser(u: any) {
+  editingUser.value   = u
+  editForm.value      = { prenom: u.prenom, nom: u.nom, email: u.email, role: u.role, password: '' }
+  editError.value     = ''
+  showEditModal.value = true
+}
+
+async function saveUser() {
+  editSaving.value = true
+  editError.value  = ''
+  try {
+    const payload: any = {
+      prenom: editForm.value.prenom,
+      nom:    editForm.value.nom,
+      email:  editForm.value.email,
+      role:   editForm.value.role,
+    }
+    if (editForm.value.password) payload.password = editForm.value.password
+
+    const { data: updated } = await superAdminApi.updateUser(editingUser.value.id, payload)
+    const u = editingUser.value
+    u.prenom = updated.prenom
+    u.nom    = updated.nom
+    u.email  = updated.email
+    u.role   = updated.role
+    showEditModal.value = false
+  } catch (e: any) {
+    editError.value = e?.response?.data?.message ?? 'Erreur lors de la modification.'
+  } finally {
+    editSaving.value = false
+  }
+}
+
+// ── Supprimer utilisateur ─────────────────────────────────────────────────────
+async function deleteUser(u: any, org: any) {
+  const isOnlyAdmin = u.role === 'admin' && org.users.filter((x: any) => x.role === 'admin').length === 1
+  let msg = `Supprimer définitivement ${u.prenom} ${u.nom} ?\nCette action est irréversible.`
+  if (isOnlyAdmin) {
+    msg = `Cet utilisateur est le seul admin de "${org.nom}".\nSupprimer quand même ?\n\n${msg}`
+  }
+  if (!confirm(msg)) return
+  try {
+    await superAdminApi.destroyUser(u.id)
+    org.users = org.users.filter((x: any) => x.id !== u.id)
+  } catch (e: any) {
+    alert(e?.response?.data?.message ?? 'Erreur lors de la suppression.')
   }
 }
 

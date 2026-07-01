@@ -248,6 +248,52 @@ class SuperAdminController extends Controller
         return response()->json($plans);
     }
 
+    public function updateUser(Request $request, int $id): JsonResponse
+    {
+        $user = User::withoutGlobalScope(TenantScope::class)->findOrFail($id);
+
+        if ($user->role === 'super_admin') {
+            return response()->json(['message' => 'Impossible de modifier un super administrateur.'], 403);
+        }
+
+        $data = $request->validate([
+            'prenom'   => 'sometimes|required|string|max:100',
+            'nom'      => 'sometimes|required|string|max:100',
+            'email'    => "sometimes|required|email|unique:users,email,{$id}",
+            'role'     => 'sometimes|required|in:admin,gestionnaire,caissier,operateur',
+            'password' => 'sometimes|nullable|string|min:8',
+        ]);
+
+        if (isset($data['prenom']))    $user->prenom   = $data['prenom'];
+        if (isset($data['nom']))       $user->nom      = $data['nom'];
+        if (isset($data['email']))     $user->email    = $data['email'];
+        if (isset($data['role']))      $user->role     = $data['role'];
+        if (!empty($data['password'])) $user->password = Hash::make($data['password']);
+
+        $user->save();
+
+        return response()->json($user->only(['id', 'nom', 'prenom', 'email', 'role', 'actif']));
+    }
+
+    public function destroyUser(int $id): JsonResponse
+    {
+        $currentUser = app('current_user');
+
+        if ($currentUser && (int) $currentUser->id === $id) {
+            return response()->json(['message' => 'Vous ne pouvez pas supprimer votre propre compte.'], 403);
+        }
+
+        $user = User::withoutGlobalScope(TenantScope::class)->findOrFail($id);
+
+        if ($user->role === 'super_admin') {
+            return response()->json(['message' => 'Impossible de supprimer un super administrateur.'], 403);
+        }
+
+        $user->delete();
+
+        return response()->json(['message' => 'Utilisateur supprimé.']);
+    }
+
     public function createOrganisation(Request $request): JsonResponse
     {
         $data = $request->validate([

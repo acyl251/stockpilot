@@ -174,7 +174,9 @@ export const superAdminApi = {
   users:              ()                       => api.get('/super-admin/users'),
   plans:              ()                       => api.get('/super-admin/plans'),
   createOrg:          (data: object)           => api.post('/super-admin/organisations', data),
-  demoRequests:       ()                       => api.get('/super-admin/demo-requests'),
+  updateUser:         (id: number, data: object)   => api.patch(`/super-admin/users/${id}`, data),
+  destroyUser:        (id: number)                 => api.delete(`/super-admin/users/${id}`),
+  demoRequests:       ()                           => api.get('/super-admin/demo-requests'),
   updateDemoStatus:   (id: number, statut: string) => api.patch(`/super-admin/demo-requests/${id}`, { statut }),
 }
 
