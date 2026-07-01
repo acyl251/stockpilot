@@ -174,6 +174,7 @@ class SuperAdminController extends Controller
         $orgs = Organisation::withoutGlobalScopes()
             ->with(['users' => function ($q) {
                 $q->withoutGlobalScopes()
+                  ->whereNull('users.deleted_at')
                   ->whereIn('role', ['admin', 'gestionnaire', 'operateur'])
                   ->orderBy('nom')
                   ->select(['id', 'organisation_id', 'nom', 'prenom', 'email', 'role', 'actif', 'created_at']);
@@ -289,9 +290,14 @@ class SuperAdminController extends Controller
             return response()->json(['message' => 'Impossible de supprimer un super administrateur.'], 403);
         }
 
-        $user->delete();
-
-        return response()->json(['message' => 'Utilisateur supprimé.']);
+        try {
+            $user->actif = false;
+            $user->save();
+            $user->delete(); // soft delete — ne touche pas aux FK (sales, movements, logs)
+            return response()->json(['message' => 'Utilisateur supprimé.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
     }
 
     public function createOrganisation(Request $request): JsonResponse
