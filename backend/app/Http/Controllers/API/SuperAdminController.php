@@ -249,6 +249,44 @@ class SuperAdminController extends Controller
         return response()->json($plans);
     }
 
+    public function destroyOrganisation(int $id): JsonResponse
+    {
+        $currentUser = app('current_user');
+
+        if ($currentUser && (int) $currentUser->organisation_id === $id) {
+            return response()->json(['message' => 'Impossible de supprimer la société du super-administrateur.'], 403);
+        }
+
+        $org = Organisation::withoutGlobalScopes()->findOrFail($id);
+
+        try {
+            DB::transaction(function () use ($id) {
+                DB::table('activity_logs')->where('organisation_id', $id)->delete();
+                DB::table('sale_items')->where('organisation_id', $id)->delete();
+                DB::table('sales')->where('organisation_id', $id)->delete();
+                DB::table('client_payments')->where('organisation_id', $id)->delete();
+                DB::table('clients')->where('organisation_id', $id)->delete();
+                DB::table('compositions')->where('organisation_id', $id)->delete();
+                DB::table('stock_movements')->where('organisation_id', $id)->delete();
+                // commandes_fournisseur_items cascade sur commande_id
+                DB::table('commandes_fournisseur')->where('organisation_id', $id)->delete();
+                DB::table('fournisseurs')->where('organisation_id', $id)->delete();
+                DB::table('type_attributes')->where('organisation_id', $id)->delete();
+                DB::table('products')->where('organisation_id', $id)->delete();
+                DB::table('product_types')->where('organisation_id', $id)->delete();
+                DB::table('categories')->where('organisation_id', $id)->delete();
+                // Hard delete users (bypass SoftDeletes — org entière supprimée)
+                DB::table('users')->where('organisation_id', $id)->delete();
+                // Suppression org — cascade: supplements, tables_restaurant, orders, order_items
+                Organisation::withoutGlobalScopes()->where('id', $id)->delete();
+            });
+
+            return response()->json(['message' => 'Société supprimée.']);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
     public function updateUser(Request $request, int $id): JsonResponse
     {
         $user = User::withoutGlobalScope(TenantScope::class)->findOrFail($id);

@@ -82,11 +82,12 @@
               <th class="px-4 py-3 text-left">Email</th>
               <th class="px-4 py-3 text-left">Rôle</th>
               <th class="px-4 py-3 text-left">Statut</th>
+              <th v-if="auth.isAdmin" class="px-4 py-3 text-left">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr v-if="users.length === 0">
-              <td colspan="4" class="px-4 py-8 text-center text-gray-400">Aucun utilisateur</td>
+              <td :colspan="auth.isAdmin ? 5 : 4" class="px-4 py-8 text-center text-gray-400">Aucun utilisateur</td>
             </tr>
             <tr v-for="u in users" :key="u.id" class="hover:bg-gray-50">
               <td class="px-4 py-3 font-medium text-gray-900">{{ u.prenom }} {{ u.nom }}</td>
@@ -100,6 +101,14 @@
                 <span :class="u.actif ? 'text-green-600' : 'text-red-500'" class="text-xs font-medium">
                   {{ u.actif ? 'Actif' : 'Inactif' }}
                 </span>
+              </td>
+              <td v-if="auth.isAdmin" class="px-4 py-3">
+                <button
+                  @click="deleteUser(u)"
+                  class="text-xs font-medium text-red-500 hover:text-red-700 hover:underline"
+                >
+                  Supprimer
+                </button>
               </td>
             </tr>
           </tbody>
@@ -184,8 +193,18 @@ async function toggleUser(u: any) {
   const action = u.actif ? 'Désactiver' : 'Activer'
   if (!confirm(`${action} le compte de ${u.prenom} ${u.nom} ?`)) return
   try {
-    const { data } = await usersApi.delete(u.id)
+    const { data } = await usersApi.update(u.id, { actif: !u.actif })
     u.actif = data.actif
+  } catch (e: any) {
+    alert(e.response?.data?.message ?? 'Erreur.')
+  }
+}
+
+async function deleteUser(u: any) {
+  if (!confirm(`Supprimer définitivement ${u.prenom} ${u.nom} ?\nCette action est irréversible.`)) return
+  try {
+    await usersApi.delete(u.id)
+    users.value = users.value.filter((x: any) => x.id !== u.id)
   } catch (e: any) {
     alert(e.response?.data?.message ?? 'Erreur.')
   }

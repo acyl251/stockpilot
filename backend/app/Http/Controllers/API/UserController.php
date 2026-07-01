@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
@@ -63,14 +64,50 @@ class UserController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $currentUser = app('current_user');
+        $orgId       = app('current_organisation_id');
 
-        if ($currentUser->id === $id) {
-            return $this->errorResponse('Vous ne pouvez pas désactiver votre propre compte.', 422);
+        if (!in_array($currentUser->role, ['admin', 'super_admin'])) {
+            return response()->json(['message' => 'Accès refusé.'], 403);
         }
 
-        $user = User::withoutGlobalScopes()->findOrFail($id);
-        $user->update(['actif' => !$user->actif]);
+        if ((int) $currentUser->id === $id) {
+            return response()->json(['message' => 'Vous ne pouvez pas supprimer votre propre compte.'], 422);
+        }
 
-        return response()->json(['actif' => $user->actif]);
+        $user = User::withoutGlobalScopes()
+            ->where('organisation_id', $orgId)
+            ->whereNull('deleted_at')
+            ->findOrFail($id);
+
+        if ($user->role === 'super_admin') {
+            return response()->json(['message' => 'Impossible de supprimer un super administrateur.'], 403);
+        }
+
+        // Bloquer si dernier admin de l'org
+        if ($user->role === 'admin') {
+            $adminCount = User::withoutGlobalScopes()
+                ->where('organisation_id', $orgId)
+                ->where('role', 'admin')
+                ->whereNull('deleted_at')
+                ->count();
+            if ($adminCount <= 1) {
+                return response()->json(['message' => "Impossible : cet utilisateur est le seul admin de l'organisation."], 422);
+            }
+        }
+
+        // Soft delete si l'utilisateur a des données liées, suppression physique sinon
+        $hasData = DB::table('sales')->where('user_id', $id)->exists()
+            || DB::table('stock_movements')->where('user_id', $id)->exists()
+            || DB::table('client_payments')->where('user_id', $id)->exists();
+
+        if ($hasData) {
+            $user->actif = false;
+            $user->save();
+            $user->delete();
+        } else {
+            $user->forceDelete();
+        }
+
+        return response()->json(['message' => 'Utilisateur supprimé.']);
     }
 }

@@ -367,6 +367,16 @@
             <p v-if="org.telephone"><span class="font-medium text-slate-600">Tél :</span> {{ org.telephone }}</p>
             <p><span class="font-medium text-slate-600">Inscrite le :</span> {{ formatDate(org.created_at) }}</p>
           </div>
+
+          <!-- Action suppression -->
+          <div class="pt-2 border-t border-slate-100">
+            <button
+              @click="deleteOrg(org)"
+              class="w-full text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg py-1.5 transition-colors"
+            >
+              Supprimer la société
+            </button>
+          </div>
         </div>
       </div>
     </template><!-- fin onglet societes -->
@@ -658,10 +668,21 @@ async function toggleUser(u: any) {
   const action = u.actif ? 'Désactiver' : 'Activer'
   if (!confirm(`${action} le compte de ${u.prenom} ${u.nom} ?`)) return
   try {
-    const { data: d } = await usersApi.delete(u.id)
+    const { data: d } = await usersApi.update(u.id, { actif: !u.actif })
     u.actif = d.actif
   } catch (e: any) {
     alert(e.response?.data?.message ?? 'Erreur.')
+  }
+}
+
+// ── Supprimer une société ─────────────────────────────────────────────────────
+async function deleteOrg(org: any) {
+  if (!confirm(`Supprimer définitivement la société "${org.nom}" et toutes ses données ?\nCette action est irréversible.`)) return
+  try {
+    await superAdminApi.destroyOrg(org.id)
+    orgs.value = orgs.value.filter((o: any) => o.id !== org.id)
+  } catch (e: any) {
+    alert(e?.response?.data?.message ?? 'Erreur lors de la suppression.')
   }
 }
 

@@ -148,7 +148,7 @@ Route::middleware('auth.tenant')->group(function () {
     Route::get('/users',          [UserController::class, 'index']);
     Route::post('/users',         [UserController::class, 'store']);
     Route::patch('/users/{id}',   [UserController::class, 'update']);
-    Route::delete('/users/{id}',  [UserController::class, 'destroy'])->middleware('super.admin');
+    Route::delete('/users/{id}',  [UserController::class, 'destroy']);
 
     // Super-Admin Platform Dashboard
     Route::middleware('super.admin')->prefix('super-admin')->group(function () {
@@ -159,6 +159,7 @@ Route::middleware('auth.tenant')->group(function () {
         Route::get('/plans',            [SuperAdminController::class, 'plans']);
         Route::patch('/users/{id}',          [SuperAdminController::class, 'updateUser']);
         Route::delete('/users/{id}',         [SuperAdminController::class, 'destroyUser']);
+        Route::delete('/organisations/{id}', [SuperAdminController::class, 'destroyOrganisation']);
         Route::get('/demo-requests',        [DemoRequestController::class, 'index']);
         Route::patch('/demo-requests/{id}', [DemoRequestController::class, 'updateStatus']);
     });
