@@ -54,7 +54,7 @@ class OnboardingController extends Controller
     public function confirm(Request $request): JsonResponse
     {
         $request->validate([
-            'types'                           => 'required|array|min:1',
+            'types'                           => 'nullable|array',
             'types.*.nom'                     => 'required|string|max:150',
             'types.*.icone'                   => 'nullable|string|max:50',
             'types.*.attributs'               => 'nullable|array',
@@ -78,7 +78,7 @@ class OnboardingController extends Controller
             $orgId = app('current_organisation_id');
 
             // ── 1. Créer les types de produits ────────────────────────────────
-            foreach ($request->types as $typeData) {
+            foreach ($request->types ?? [] as $typeData) {
                 $type = ProductType::create([
                     'nom'            => $typeData['nom'],
                     'icone'          => $typeData['icone'] ?? null,
