@@ -20,5 +20,8 @@ Route::get('/{any?}', function () {
 
     abort_unless(file_exists($index), 404, "Le frontend n'a pas été compilé. Lancez `npm run build`.");
 
-    return response()->file($index);
+    return response()->file($index, [
+        'Cache-Control' => 'no-store, no-cache, must-revalidate',
+        'Pragma'        => 'no-cache',
+    ]);
 })->where('any', '^(?!api|up).*$');
