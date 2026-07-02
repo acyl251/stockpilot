@@ -411,14 +411,12 @@ class SuperAdminController extends Controller
             $this->restaurantCategories->seedForOrganisation($org->id);
         }
 
-        // ── 3. AI catalog seeding (outside the transaction) ───────────────────
+        // ── 3. AI catalog seeding — DÉSACTIVÉ (catalogue démarre vide) ───────────
         $seed = ['types' => 0, 'categories' => 0, 'products' => 0];
 
-        if (!empty($data['org_secteur']) && $org->load('plan')->hasAIEnabled()) {
-            // seedFromSector creates types + categories + products and marks
-            // onboarding_complete itself when products were created.
-            $seed = $this->catalogSeeder->seedFromSector($org->id, $data['org_secteur']);
-        }
+        // if (!empty($data['org_secteur']) && $org->load('plan')->hasAIEnabled()) {
+        //     $seed = $this->catalogSeeder->seedFromSector($org->id, $data['org_secteur']);
+        // }
 
         return response()->json([
             'organisation' => $org->fresh()->load('plan'),

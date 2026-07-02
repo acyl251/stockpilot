@@ -21,7 +21,7 @@
       <!-- Step 1: Sector -->
       <div v-if="step === 1" class="px-8 py-6 space-y-4">
         <h2 class="text-lg font-semibold text-navy">Quel est votre secteur d'activité ?</h2>
-        <p class="text-sm text-slate-500">L'IA va proposer des types de produits adaptés à votre activité.</p>
+        <p class="text-sm text-slate-500">Sélectionnez les types de produits adaptés à votre activité.</p>
         <div class="grid grid-cols-2 gap-3">
           <button v-for="s in sectors" :key="s"
             @click="form.secteur = s"
@@ -39,13 +39,12 @@
       <!-- Step 2: AI type suggestions -->
       <div v-if="step === 2" class="px-8 py-6 space-y-4">
         <div class="flex items-center gap-2">
-          <h2 class="text-lg font-semibold text-navy">Types de produits suggérés par l'IA</h2>
-          <span class="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full">GPT-4o mini</span>
+          <h2 class="text-lg font-semibold text-navy">Types de produits</h2>
         </div>
         <p class="text-sm text-slate-500">Sélectionnez les types à activer pour votre organisation.</p>
 
         <div v-if="loadingSuggestions" class="text-center py-8 text-slate-400">
-          <div class="animate-pulse">✨ L'IA génère vos suggestions…</div>
+          <div class="animate-pulse">Chargement…</div>
         </div>
 
         <div v-else class="space-y-3">
@@ -80,67 +79,11 @@
         </div>
       </div>
 
-      <!-- Step 3: AI product suggestions (AI plan only) -->
+      <!-- Step 3: AI product suggestions — DÉSACTIVÉ (seeding IA catalogue désactivé)
       <div v-if="step === 3 && auth.hasAI" class="px-8 py-6 space-y-4">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2">
-            <h2 class="text-lg font-semibold text-navy">Produits suggérés pour votre catalogue</h2>
-            <span class="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full">GPT-4o mini</span>
-          </div>
-          <div v-if="!loadingProducts && suggestedProducts.length > 0" class="flex gap-2">
-            <button @click="selectAllProducts" class="text-xs text-gold hover:underline">Tout sélectionner</button>
-            <span class="text-slate-300">|</span>
-            <button @click="selectedProducts = []" class="text-xs text-slate-500 hover:underline">Tout désélectionner</button>
-          </div>
-        </div>
-        <p class="text-sm text-slate-500">
-          Sélectionnez les produits à importer directement dans votre catalogue.
-          <span class="text-slate-400">({{ selectedProducts.length }} sélectionné{{ selectedProducts.length > 1 ? 's' : '' }})</span>
-        </p>
-
-        <div v-if="loadingProducts" class="text-center py-10 text-slate-400">
-          <div class="space-y-3">
-            <div class="h-3 bg-slate-100 rounded animate-pulse w-3/4 mx-auto"></div>
-            <div class="h-3 bg-slate-100 rounded animate-pulse w-2/3 mx-auto"></div>
-            <div class="h-3 bg-slate-100 rounded animate-pulse w-4/5 mx-auto"></div>
-            <p class="text-sm mt-4">✨ L'IA génère votre catalogue initial…</p>
-          </div>
-        </div>
-
-        <div v-else-if="suggestedProducts.length === 0" class="text-center py-8 text-slate-400">
-          <p class="text-sm">Aucun produit suggéré. Vous pourrez en ajouter manuellement depuis le catalogue.</p>
-        </div>
-
-        <div v-else class="space-y-4 max-h-96 overflow-y-auto pr-1">
-          <div v-for="cat in productCategories" :key="cat">
-            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2 sticky top-0 bg-white py-1">{{ cat }}</p>
-            <div class="space-y-2">
-              <div v-for="(p, i) in productsByCategory(cat)" :key="i"
-                @click="toggleProduct(p)"
-                :class="['rounded-xl border-2 p-3 cursor-pointer transition-all flex items-center gap-3',
-                  isProductSelected(p) ? 'border-gold bg-gold/5' : 'border-slate-200 hover:border-slate-300']">
-                <div :class="['w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all',
-                  isProductSelected(p) ? 'border-gold bg-gold' : 'border-slate-300']">
-                  <svg v-if="isProductSelected(p)" class="w-3 h-3 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="flex items-center gap-2">
-                    <p class="font-medium text-navy text-sm truncate">{{ p.nom }}</p>
-                    <span class="text-xs text-slate-400 flex-shrink-0">{{ p.reference }}</span>
-                  </div>
-                  <p v-if="p.description" class="text-xs text-slate-400 truncate">{{ p.description }}</p>
-                </div>
-                <div class="text-right flex-shrink-0 space-y-0.5">
-                  <p class="text-sm font-semibold text-navy">{{ formatPrice(p.prix_vente_ht) }} TND</p>
-                  <p class="text-xs text-slate-400">Qté : {{ p.quantite }} {{ p.unite_mesure }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        ...
       </div>
+      -->
 
       <!-- Final step: Confirmation -->
       <div v-if="step === finalStep" class="px-8 py-6 text-center space-y-4">
@@ -152,9 +95,11 @@
         <h2 class="text-xl font-semibold text-navy">Configuration terminée !</h2>
         <p class="text-slate-500 text-sm">
           {{ selectedTypes.length }} type(s) de produits ont été créés pour votre organisation.
+          <!-- Produits importés via catalogue IA — désactivé
           <span v-if="createdProductsCount > 0">
             <br />{{ createdProductsCount }} produit(s) ont été importés dans votre catalogue.
           </span>
+          -->
         </p>
         <button @click="goToDashboard" class="btn-secondary w-full">
           Accéder au tableau de bord →
@@ -168,11 +113,13 @@
         <div v-else />
 
         <div class="flex gap-3 items-center">
+          <!-- Boutons step 3 AI products — DÉSACTIVÉS (seeding IA catalogue désactivé)
           <button v-if="step === 3 && auth.hasAI && !loadingProducts"
             @click="confirmWithProducts([])"
             class="px-4 py-2 text-sm text-slate-500 hover:text-slate-700">
             Passer cette étape
           </button>
+          -->
 
           <button v-if="step === 1" @click="goToStep2" :disabled="!form.secteur"
             class="btn-primary disabled:opacity-60">
@@ -183,12 +130,15 @@
             class="btn-primary disabled:opacity-60">
             Continuer →
           </button>
+
+          <!-- Bouton import produits AI — DÉSACTIVÉ
           <button v-if="step === 3 && auth.hasAI"
             @click="confirmWithProducts(selectedProducts)"
             :disabled="saving || loadingProducts"
             class="btn-primary disabled:opacity-60">
             {{ saving ? 'Enregistrement…' : (selectedProducts.length > 0 ? `Importer ${selectedProducts.length} produit(s)` : 'Continuer sans produits') }}
           </button>
+          -->
         </div>
       </div>
     </div>
@@ -204,7 +154,7 @@ import { onboardingApi } from '@/services/api'
 const router = useRouter()
 const auth   = useAuthStore()
 
-const totalSteps = computed(() => auth.hasAI ? 4 : 3)
+const totalSteps = computed(() => 3)
 const finalStep  = computed(() => totalSteps.value)
 
 const step               = ref(1)
@@ -322,14 +272,15 @@ async function goToStep2() {
   step.value = 2
   loadingSuggestions.value = true
   try {
-    if (auth.hasAI) {
-      const { data } = await onboardingApi.suggest(form.value.secteur)
-      suggestions.value = (data.suggestions ?? []).length > 0
-        ? data.suggestions
-        : getDefaultSuggestions(form.value.secteur)
-    } else {
-      suggestions.value = getDefaultSuggestions(form.value.secteur)
-    }
+    // Seeding IA désactivé — toujours utiliser les suggestions par défaut
+    // if (auth.hasAI) {
+    //   const { data } = await onboardingApi.suggest(form.value.secteur)
+    //   suggestions.value = (data.suggestions ?? []).length > 0
+    //     ? data.suggestions
+    //     : getDefaultSuggestions(form.value.secteur)
+    // } else {
+    suggestions.value = getDefaultSuggestions(form.value.secteur)
+    // }
     selectedTypes.value = suggestions.value.map((_, i) => i)
   } catch {
     suggestions.value = getDefaultSuggestions(form.value.secteur)
@@ -340,25 +291,27 @@ async function goToStep2() {
 }
 
 async function goToStep3() {
-  if (!auth.hasAI) {
-    await confirmWithProducts([])
-    return
-  }
+  // Seeding IA catalogue désactivé — passer directement à la confirmation sans produits
+  await confirmWithProducts([])
 
-  step.value = 3
-  loadingProducts.value = true
-  suggestedProducts.value = []
-  selectedProducts.value = []
-
-  try {
-    const { data } = await onboardingApi.suggestProducts(form.value.secteur)
-    suggestedProducts.value = data.products ?? []
-    selectedProducts.value = [...suggestedProducts.value]
-  } catch {
-    suggestedProducts.value = []
-  } finally {
-    loadingProducts.value = false
-  }
+  // Code IA commenté :
+  // if (!auth.hasAI) {
+  //   await confirmWithProducts([])
+  //   return
+  // }
+  // step.value = 3
+  // loadingProducts.value = true
+  // suggestedProducts.value = []
+  // selectedProducts.value = []
+  // try {
+  //   const { data } = await onboardingApi.suggestProducts(form.value.secteur)
+  //   suggestedProducts.value = data.products ?? []
+  //   selectedProducts.value = [...suggestedProducts.value]
+  // } catch {
+  //   suggestedProducts.value = []
+  // } finally {
+  //   loadingProducts.value = false
+  // }
 }
 
 async function confirmWithProducts(products: any[]) {

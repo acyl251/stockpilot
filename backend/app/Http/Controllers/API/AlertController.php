@@ -85,7 +85,9 @@ class AlertController extends Controller
             ->select(['id', 'nom', 'reference', 'quantite', 'seuil_alerte', 'unite_mesure'])
             ->get();
 
-        $suggestions = $this->aiService->suggestReorder($products->toArray());
+        // Appel GPT désactivé — retourne tableau vide
+        // $suggestions = $this->aiService->suggestReorder($products->toArray());
+        $suggestions = [];
 
         return response()->json(['suggestions' => $suggestions]);
     }
@@ -158,7 +160,9 @@ class AlertController extends Controller
             ->get(['product_id', 'type_mouvement', 'quantite', 'date_mouvement'])
             ->toArray();
 
-        $anomalies = $this->aiService->detectAnomaly($movements);
+        // Appel GPT désactivé — retourne tableau vide
+        // $anomalies = $this->aiService->detectAnomaly($movements);
+        $anomalies = [];
 
         return response()->json(['anomalies' => $anomalies]);
     }
