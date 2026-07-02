@@ -111,13 +111,10 @@
           </div>
 
           <p v-if="orgError" class="text-red-500 text-xs">{{ orgError }}</p>
-          <p v-if="orgSaving && orgForm.org_secteur" class="text-xs text-gold animate-pulse">
-            ✨ L'IA génère le catalogue pour "{{ orgForm.org_secteur }}"…
-          </p>
           <div class="flex gap-2 pt-2">
             <button type="button" @click="showOrgForm = false" class="flex-1 border rounded-lg py-2 text-sm hover:bg-slate-50">Annuler</button>
             <button type="submit" :disabled="orgSaving" class="flex-1 bg-gold hover:bg-yellow-500 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50">
-              {{ orgSaving ? (orgForm.org_secteur ? 'Génération catalogue IA…' : 'Création…') : 'Créer la société' }}
+              {{ orgSaving ? 'Création…' : 'Créer la société' }}
             </button>
           </div>
         </form>
@@ -798,10 +795,7 @@ async function submitOrg() {
     showOrgForm.value = false
     const res = await superAdminApi.dashboard()
     data.value = res.data
-    const nb = result.nb_produits ?? 0
-    if (nb > 0) {
-      alert(`Société créée avec succès.\n✨ ${nb} produits importés automatiquement via l'IA pour le secteur "${orgForm.value.org_secteur}".`)
-    }
+    // Catalogue IA désactivé — nb_produits sera toujours 0
   } catch (e: any) {
     orgError.value = e.response?.data?.message ?? 'Erreur lors de la création.'
   } finally {
