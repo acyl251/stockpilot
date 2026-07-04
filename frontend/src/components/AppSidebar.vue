@@ -68,6 +68,7 @@ const navItems = computed(() => {
     ...(auth.isAdmin ? [{ to: '/app/users', icon: 'users', label: 'Utilisateurs', badge: undefined }] : []),
     ...(auth.isAdmin ? [{ to: '/app/points-de-vente', icon: 'ventes',     label: 'Points de vente', badge: undefined }] : []),
     ...(auth.isAdmin ? [{ to: '/app/transferts',      icon: 'movements',  label: 'Transferts',      badge: undefined }] : []),
+    ...(auth.chaineVisible ? [{ to: '/app/chaine',  icon: 'chaine',     label: 'Vue chaîne',      badge: undefined }] : []),
     ...(['admin', 'manager'].includes(auth.user?.role ?? '') ? [{ to: '/app/logs', icon: 'logs', label: 'Activité', badge: undefined }] : []),
   ]
 })

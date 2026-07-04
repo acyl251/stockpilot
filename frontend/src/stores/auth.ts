@@ -19,6 +19,7 @@ interface User {
     adresse?: string
     telephone?: string
     onboarding_complete: boolean
+    points_de_vente_count?: number
     plan: { ia_activee: boolean }
   }
 }
@@ -34,6 +35,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isRestauration    = computed(() => user.value?.organisation?.secteur === 'restauration')
   const pointDeVenteId    = computed(() => user.value?.point_de_vente_id ?? null)
   const pointDeVente      = computed(() => user.value?.point_de_vente ?? null)
+  // Vue Chaîne : visible uniquement si admin + au moins 2 PDVs actifs
+  const chaineVisible     = computed(() =>
+    isAdmin.value && (user.value?.organisation?.points_de_vente_count ?? 0) >= 2
+  )
 
   async function setSession(data: any) {
     accessToken.value = data.access_token
@@ -64,5 +69,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, isRestauration, pointDeVenteId, pointDeVente, login, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, isRestauration, pointDeVenteId, pointDeVente, chaineVisible, login, logout, fetchMe, initPromise }
 })

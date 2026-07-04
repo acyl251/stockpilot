@@ -82,6 +82,14 @@ class AuthController extends Controller
     public function me(): JsonResponse
     {
         $user = app('current_user');
-        return response()->json($user->load('organisation.plan', 'pointDeVente:id,nom,type'));
+        $user->load('organisation.plan', 'pointDeVente:id,nom,type');
+
+        // Nombre de PDVs actifs — permet au frontend de savoir si la Vue Chaîne est accessible
+        if ($user->organisation) {
+            $user->organisation->points_de_vente_count =
+                \App\Models\PointDeVente::where('actif', true)->count();
+        }
+
+        return response()->json($user);
     }
 }

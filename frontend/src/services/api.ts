@@ -211,6 +211,14 @@ export const activityLogsApi = {
   export: (params?: object) => api.get('/activity-logs/export', { params, responseType: 'blob' }),
 }
 
+// ─── Dashboard Chaîne ─────────────────────────────────────────────────────────
+export const chaineApi = {
+  caParPoint:        ()                  => api.get('/chaine/ca-par-point'),
+  stockParPoint:     (params?: object)   => api.get('/chaine/stock-par-point', { params }),
+  topPlats:          ()                  => api.get('/chaine/top-plats'),
+  transfertsRecents: ()                  => api.get('/chaine/transferts-recents'),
+}
+
 // ─── Transferts inter-PDV ─────────────────────────────────────────────────────
 export const transfertsApi = {
   list:   (params?: object) => api.get('/transferts', { params }),

@@ -46,6 +46,7 @@ const router = createRouter({
         { path: 'super-admin',    name: 'super-admin',    component: () => import('@/views/SuperAdminView.vue') },
         { path: 'points-de-vente', name: 'points-de-vente', component: () => import('@/views/PointsVenteView.vue') },
         { path: 'transferts',      name: 'transferts',      component: () => import('@/views/TransfertsView.vue') },
+        { path: 'chaine',          name: 'chaine',          component: () => import('@/views/ChaineView.vue') },
       ],
     },
     // Public digital menu — no auth, no sidebar
@@ -62,7 +63,7 @@ const router = createRouter({
 const superAdminRoutes = new Set(['super-admin', 'users'])
 
 // Routes tenant (catalogue, mouvements…) interdites au super_admin
-const tenantRoutes = new Set(['dashboard', 'products', 'menu', 'supplements', 'tables', 'consommation', 'caisse', 'ventes', 'clients', 'product-detail', 'movements', 'fournisseurs', 'alerts', 'config', 'logs', 'points-de-vente', 'transferts'])
+const tenantRoutes = new Set(['dashboard', 'products', 'menu', 'supplements', 'tables', 'consommation', 'caisse', 'ventes', 'clients', 'product-detail', 'movements', 'fournisseurs', 'alerts', 'config', 'logs', 'points-de-vente', 'transferts', 'chaine'])
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()

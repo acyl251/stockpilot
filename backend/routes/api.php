@@ -26,6 +26,7 @@ use App\Http\Controllers\API\StockMovementController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\PointDeVenteController;
 use App\Http\Controllers\API\TransfertController;
+use App\Http\Controllers\API\ChaineController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public ───────────────────────────────────────────────────────────────────
@@ -168,6 +169,14 @@ Route::middleware('auth.tenant')->group(function () {
     Route::get('/transferts',        [TransfertController::class, 'index']);
     Route::get('/transferts/{id}',   [TransfertController::class, 'show']);
     Route::post('/transferts',       [TransfertController::class, 'store']);
+
+    // Dashboard Chaîne (admin uniquement, multi-PDV)
+    Route::prefix('chaine')->group(function () {
+        Route::get('ca-par-point',      [ChaineController::class, 'caParPoint']);
+        Route::get('stock-par-point',   [ChaineController::class, 'stockParPoint']);
+        Route::get('top-plats',         [ChaineController::class, 'topPlats']);
+        Route::get('transferts-recents',[ChaineController::class, 'transfertsRecents']);
+    });
 
     // Super-Admin Platform Dashboard
     Route::middleware('super.admin')->prefix('super-admin')->group(function () {
