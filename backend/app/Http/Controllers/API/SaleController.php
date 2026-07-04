@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
 use App\Models\Organisation;
+use App\Models\PointDeVente;
 use App\Models\Sale;
 use App\Services\ActivityLogService;
 use App\Services\InvoiceService;
@@ -97,9 +98,10 @@ class SaleController extends Controller
     public function store(Request $request): JsonResponse
     {
         $currentUser = app('current_user');
+        $isAdmin     = in_array($currentUser->role, ['admin', 'super_admin']);
 
         // Bloquer l'opérateur sans PDV assigné
-        if ($currentUser->role === 'operateur' && ! $currentUser->point_de_vente_id) {
+        if (! $isAdmin && ! $currentUser->point_de_vente_id) {
             return response()->json([
                 'message' => 'Votre compte n\'est rattaché à aucun point de vente. Contactez votre administrateur.',
             ], 422);
@@ -123,7 +125,25 @@ class SaleController extends Controller
             'client_nom'           => 'nullable|string|max:150',
             'client_telephone'     => 'nullable|string|max:30',
             'reference_carte'      => 'nullable|string|max:100',
+            // Admin peut choisir depuis quel PDV vendre s'il n'en a pas d'assigné
+            'point_de_vente_id'    => 'nullable|integer|exists:points_de_vente,id',
         ]);
+
+        // Résoudre le PDV de vente :
+        // 1. PDV assigné à l'utilisateur (opérateur ou admin avec PDV)
+        // 2. PDV envoyé dans le body (admin sans PDV assigné)
+        $pdvId = $currentUser->point_de_vente_id
+            ?? ($isAdmin ? ($data['point_de_vente_id'] ?? null) : null);
+
+        // Un entrepôt ne peut pas être utilisé comme point de vente
+        if ($pdvId) {
+            $pdv = PointDeVente::find($pdvId);
+            if ($pdv && $pdv->type === 'entrepot') {
+                return response()->json([
+                    'message' => 'Un entrepôt ne peut pas être utilisé comme point de vente. Choisissez un point de vente.',
+                ], 422);
+            }
+        }
 
         // Vente à crédit : résoudre le client (existant ou créé à la volée).
         $clientId = $data['client_id'] ?? null;
@@ -143,7 +163,7 @@ class SaleController extends Controller
             remiseValeur:   $data['remise_valeur'] ?? null,
             clientId:       $clientId,
             referenceCarte: $data['reference_carte'] ?? null,
-            pointDeVenteId: $currentUser->point_de_vente_id,
+            pointDeVenteId: $pdvId,
         );
 
         $sale->load(['items.product:id,nom,reference', 'user:id,nom,prenom', 'client:id,nom,telephone']);

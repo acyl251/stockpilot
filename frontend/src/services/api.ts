@@ -211,9 +211,16 @@ export const activityLogsApi = {
   export: (params?: object) => api.get('/activity-logs/export', { params, responseType: 'blob' }),
 }
 
+// ─── Transferts inter-PDV ─────────────────────────────────────────────────────
+export const transfertsApi = {
+  list:   (params?: object) => api.get('/transferts', { params }),
+  get:    (id: number)      => api.get(`/transferts/${id}`),
+  create: (data: object)    => api.post('/transferts', data),
+}
+
 // ─── Points de vente ──────────────────────────────────────────────────────────
 export const pointsDeVenteApi = {
-  list:     ()                          => api.get('/points-de-vente'),
+  list:     (params?: object)           => api.get('/points-de-vente', { params }),
   create:   (data: object)              => api.post('/points-de-vente', data),
   update:   (id: number, data: object)  => api.patch(`/points-de-vente/${id}`, data),
   destroy:  (id: number)                => api.delete(`/points-de-vente/${id}`),

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\CommandeFournisseur;
 use App\Models\CommandeFournisseurItem;
+use App\Models\PointDeVente;
 use App\Models\Product;
 use App\Services\ActivityLogService;
 use App\Services\StockService;
@@ -161,9 +162,17 @@ class CommandeFournisseurController extends Controller
             'items.*.prix_unitaire_reel'   => 'nullable|numeric|min:0',
         ]);
 
-        $userId = app('current_user')->id;
+        $userId  = app('current_user')->id;
+        $orgId   = app('current_organisation_id');
 
-        DB::transaction(function () use ($commande, $data, $userId) {
+        // Les livraisons fournisseur vont dans l'entrepôt de l'organisation
+        $entrepot = PointDeVente::where('organisation_id', $orgId)
+            ->where('type', 'entrepot')
+            ->where('actif', true)
+            ->orderBy('id')
+            ->first();
+
+        DB::transaction(function () use ($commande, $data, $userId, $entrepot) {
             $itemsById = $commande->items->keyBy('id');
 
             foreach ($data['items'] as $row) {
@@ -177,14 +186,15 @@ class CommandeFournisseurController extends Controller
                     continue;
                 }
 
-                // Create stock entry movement
+                // Create stock entry movement — vers l'entrepôt si disponible
                 $this->stockService->createMovement(
-                    productId:    $item->product_id,
-                    userId:       $userId,
-                    type:         'entree',
-                    quantite:     $qteRecue,
-                    note:         "Réception commande fournisseur #{$commande->id}",
-                    enforceStock: false,
+                    productId:      $item->product_id,
+                    userId:         $userId,
+                    type:           'entree',
+                    quantite:       $qteRecue,
+                    note:           "Réception commande fournisseur #{$commande->id}",
+                    enforceStock:   false,
+                    pointDeVenteId: $entrepot?->id,
                 );
 
                 // Update purchase price if provided

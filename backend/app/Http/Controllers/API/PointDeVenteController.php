@@ -11,9 +11,10 @@ use Illuminate\Http\Request;
 
 class PointDeVenteController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $pdvs = PointDeVente::withCount('users')
+            ->when($request->type, fn($q, $t) => $q->where('type', $t))
             ->orderBy('nom')
             ->get();
 

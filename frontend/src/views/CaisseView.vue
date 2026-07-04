@@ -2,6 +2,20 @@
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 h-full">
     <!-- ── Catalogue (sélection produits) ─────────────────────────────── -->
     <div class="lg:col-span-2 space-y-4">
+
+      <!-- Sélecteur PDV pour admin sans point rattaché -->
+      <div v-if="needsPdvSelector" class="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-lg px-4 py-2.5">
+        <span class="text-amber-700 text-sm font-medium whitespace-nowrap">Vendre depuis :</span>
+        <select v-model="caissePointId" class="flex-1 border border-amber-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold bg-white">
+          <option :value="null">— Choisir un point de vente —</option>
+          <option v-for="pdv in pointsVente" :key="pdv.id" :value="pdv.id">{{ pdv.nom }}</option>
+        </select>
+      </div>
+      <!-- Info PDV pour admin avec point rattaché -->
+      <div v-else-if="auth.isAdmin && auth.pointDeVente" class="text-xs text-slate-400 px-1">
+        Vente depuis : <span class="font-medium text-navy">{{ auth.pointDeVente.nom }}</span>
+      </div>
+
       <div class="flex gap-3">
         <input v-model="search" @input="debouncedFetch"
           placeholder="Rechercher un produit par nom ou référence…"
@@ -286,7 +300,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { productsApi, salesApi, clientsApi, supplementsApi } from '@/services/api'
+import { productsApi, salesApi, clientsApi, supplementsApi, pointsDeVenteApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { printReceipt } from '@/utils/print'
 
@@ -309,6 +323,19 @@ interface Client { id: number; nom: string; telephone?: string; solde?: number }
 
 const auth = useAuthStore()
 const orgName = computed(() => auth.user?.organisation?.nom ?? 'StockPilot')
+
+// PDV de vente pour l'admin sans PDV assigné
+interface Pdv { id: number; nom: string; type: string }
+const pointsVente      = ref<Pdv[]>([])
+const caissePointId    = ref<number | null>(null)
+// Admin qui a un PDV assigné → pas besoin du sélecteur
+const needsPdvSelector = computed(() =>
+  auth.isAdmin && !auth.pointDeVenteId
+)
+// PDV effectif utilisé pour la vente
+const effectivePdvId = computed<number | null>(() =>
+  auth.pointDeVenteId ?? (needsPdvSelector.value ? caissePointId.value : null)
+)
 
 // Stock-warning modal state (restauration only)
 const showStockWarning = ref(false)
@@ -457,6 +484,7 @@ const rendu = computed(() => r3((montantPaye.value ?? 0) - totalTtc.value))
 
 const canValidate = computed(() => {
   if (cart.value.length === 0) return false
+  if (needsPdvSelector.value && !caissePointId.value) return false
   if (mode.value === 'especes' && montantPaye.value !== null && montantPaye.value < totalTtc.value) return false
   // Crédit : un client (existant ou nom saisi) est obligatoire
   if (mode.value === 'credit' && !selectedClient.value && !clientSearch.value.trim()) return false
@@ -566,6 +594,10 @@ function cancelStockWarning() {
 }
 
 async function _doCreateSale(payload: any) {
+  // Injecter le PDV de vente si admin sans PDV assigné
+  if (effectivePdvId.value) {
+    payload.point_de_vente_id = effectivePdvId.value
+  }
   try {
     const { data } = await salesApi.create(payload)
     receipt.value = data
@@ -603,5 +635,14 @@ function doPrint() {
   })
 }
 
-onMounted(fetchProducts)
+onMounted(async () => {
+  await fetchProducts()
+  if (needsPdvSelector.value) {
+    try {
+      const { data } = await pointsDeVenteApi.list({ type: 'point_vente' })
+      pointsVente.value = data
+      if (data.length === 1) caissePointId.value = data[0].id
+    } catch {}
+  }
+})
 </script>
