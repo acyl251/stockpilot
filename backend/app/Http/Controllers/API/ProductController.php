@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\Organisation;
 use App\Models\Product;
+use App\Models\StockParPoint;
 use App\Services\ActivityLogService;
 use App\Services\PlanLimitService;
 use Illuminate\Http\JsonResponse;
@@ -17,26 +18,72 @@ class ProductController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
     {
+        $user  = app('current_user');
+
+        // Resolve which PDV context to use for stock display
+        $pdvId = null;
+        if ($user->role === 'operateur' && $user->point_de_vente_id) {
+            $pdvId = (int) $user->point_de_vente_id;
+        } elseif ($user->role === 'admin' && $request->point_de_vente_id) {
+            $pdvId = (int) $request->point_de_vente_id;
+        }
+
         $query = Product::with(['category', 'productType'])
             ->when($request->search, fn($q, $s) => $q->where(
-                fn($w) => $w->where('nom', 'LIKE', "%$s%")->orWhere('reference', 'LIKE', "%$s%")
+                fn($w) => $w->where('products.nom', 'LIKE', "%$s%")->orWhere('products.reference', 'LIKE', "%$s%")
             ))
-            ->when($request->category_id, fn($q, $id) => $q->where('category_id', $id))
-            ->when($request->product_type_id, fn($q, $id) => $q->where('product_type_id', $id))
-            ->when($request->type, fn($q, $t) => $q->where('type', $t))
-            ->when($request->statut === 'alerte', fn($q) => $q->whereRaw(
-                'quantite > 0 AND quantite <= seuil_alerte'
-            ))
-            ->when($request->statut === 'rupture', fn($q) => $q->where('quantite', '<=', 0))
-            // Active products only by default; pass ?actif=0 to include deactivated ones.
+            ->when($request->category_id, fn($q, $id) => $q->where('products.category_id', $id))
+            ->when($request->product_type_id, fn($q, $id) => $q->where('products.product_type_id', $id))
+            ->when($request->type, fn($q, $t) => $q->where('products.type', $t))
             ->when(
                 $request->has('actif'),
-                fn($q) => $q->where('actif', $request->boolean('actif')),
-                fn($q) => $q->where('actif', true)
+                fn($q) => $q->where('products.actif', $request->boolean('actif')),
+                fn($q) => $q->where('products.actif', true)
             )
-            ->orderBy('nom');
+            ->orderBy('products.nom');
 
-        return ProductResource::collection($query->paginate($request->per_page ?? 20));
+        // Status filter: use per-PDV stock when a PDV context is active
+        if ($pdvId !== null) {
+            if ($request->statut === 'alerte') {
+                $query->whereExists(fn($sub) => $sub
+                    ->from('stock_par_point')
+                    ->whereColumn('stock_par_point.product_id', 'products.id')
+                    ->where('stock_par_point.point_de_vente_id', $pdvId)
+                    ->whereRaw('stock_par_point.quantite > 0')
+                    ->whereRaw('stock_par_point.quantite <= products.seuil_alerte')
+                );
+            } elseif ($request->statut === 'rupture') {
+                // Rupture = no stock_par_point row, or row with quantite <= 0
+                $query->where(fn($w) => $w
+                    ->whereNotExists(fn($sub) => $sub
+                        ->from('stock_par_point')
+                        ->whereColumn('stock_par_point.product_id', 'products.id')
+                        ->where('stock_par_point.point_de_vente_id', $pdvId)
+                        ->where('stock_par_point.quantite', '>', 0)
+                    )
+                );
+            }
+        } else {
+            $query->when($request->statut === 'alerte', fn($q) => $q->whereRaw(
+                'quantite > 0 AND quantite <= seuil_alerte'
+            ))
+            ->when($request->statut === 'rupture', fn($q) => $q->where('quantite', '<=', 0));
+        }
+
+        $paginated = $query->paginate($request->per_page ?? 20);
+
+        // Override quantite with per-PDV stock so the resource reflects the right value
+        if ($pdvId !== null) {
+            $stockMap = StockParPoint::where('point_de_vente_id', $pdvId)
+                ->whereIn('product_id', $paginated->pluck('id'))
+                ->pluck('quantite', 'product_id');
+
+            $paginated->each(function (Product $product) use ($stockMap) {
+                $product->quantite = (float) ($stockMap[$product->id] ?? 0.0);
+            });
+        }
+
+        return ProductResource::collection($paginated);
     }
 
     /** Check whether a product reference is still available within the tenant. */

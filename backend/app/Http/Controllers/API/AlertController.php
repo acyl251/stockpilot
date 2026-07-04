@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\CommandeFournisseurItem;
 use App\Models\Product;
+use App\Models\StockParPoint;
 use App\Services\AIService;
 use App\Services\WhatsAppService;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +19,8 @@ class AlertController extends Controller
     /** Envoie un récapitulatif des produits à réapprovisionner par WhatsApp. */
     public function notifyStock(Request $request, WhatsAppService $wa): JsonResponse
     {
-        $org   = app('current_user')->organisation;
+        $user  = app('current_user');
+        $org   = $user->organisation;
         $phone = $request->input('telephone') ?: $org->telephone;
 
         if (! $phone) {
@@ -27,12 +29,18 @@ class AlertController extends Controller
             );
         }
 
-        $produits = Product::whereRaw('quantite <= seuil_alerte')
-            ->where('actif', true)
-            ->where('type', '!=', 'compose')
-            ->orderBy('quantite')
-            ->limit(30)
-            ->get(['nom', 'quantite', 'unite_mesure']);
+        $pdvId = ($user->role === 'operateur' && $user->point_de_vente_id)
+            ? (int) $user->point_de_vente_id
+            : null;
+
+        $produits = $pdvId !== null
+            ? $this->getAlertProductsForPdv($pdvId)
+            : Product::whereRaw('quantite <= seuil_alerte')
+                ->where('actif', true)
+                ->where('type', '!=', 'compose')
+                ->orderBy('quantite')
+                ->limit(30)
+                ->get(['nom', 'quantite', 'unite_mesure']);
 
         if ($produits->isEmpty()) {
             return $this->errorResponse('Aucune alerte de stock à envoyer.', 422);
@@ -55,22 +63,93 @@ class AlertController extends Controller
 
     public function stockAlerts(): JsonResponse
     {
-        $ruptures = Product::where('quantite', '<=', 0)->where('actif', true)
-            ->where('type', '!=', 'compose')
-            ->with('category')
-            ->get(['id', 'nom', 'reference', 'quantite', 'seuil_alerte', 'unite_mesure', 'category_id']);
+        $user  = app('current_user');
+        $pdvId = ($user->role === 'operateur' && $user->point_de_vente_id)
+            ? (int) $user->point_de_vente_id
+            : null;
 
-        $alertes = Product::whereRaw('quantite > 0 AND quantite <= seuil_alerte')
-            ->where('actif', true)
-            ->where('type', '!=', 'compose')
-            ->with('category')
-            ->get(['id', 'nom', 'reference', 'quantite', 'seuil_alerte', 'unite_mesure', 'category_id']);
+        if ($pdvId !== null) {
+            $ruptures = $this->getAlertProductsForPdv($pdvId, 'rupture');
+            $alertes  = $this->getAlertProductsForPdv($pdvId, 'alerte');
+        } else {
+            $ruptures = Product::where('quantite', '<=', 0)->where('actif', true)
+                ->where('type', '!=', 'compose')
+                ->with('category')
+                ->get(['id', 'nom', 'reference', 'quantite', 'seuil_alerte', 'unite_mesure', 'category_id']);
+
+            $alertes = Product::whereRaw('quantite > 0 AND quantite <= seuil_alerte')
+                ->where('actif', true)
+                ->where('type', '!=', 'compose')
+                ->with('category')
+                ->get(['id', 'nom', 'reference', 'quantite', 'seuil_alerte', 'unite_mesure', 'category_id']);
+        }
 
         return response()->json([
             'ruptures' => $ruptures,
             'alertes'  => $alertes,
             'total'    => $ruptures->count() + $alertes->count(),
         ]);
+    }
+
+    /**
+     * Fetch products for a specific PDV with their per-PDV stock overriding the global quantite.
+     * $mode: 'alerte' | 'rupture' | null (both combined, for WhatsApp notify)
+     */
+    private function getAlertProductsForPdv(int $pdvId, ?string $mode = null)
+    {
+        $query = Product::query()
+            ->where('actif', true)
+            ->where('type', '!=', 'compose')
+            ->with('category');
+
+        if ($mode === 'alerte') {
+            $query->whereExists(fn($sub) => $sub
+                ->from('stock_par_point')
+                ->whereColumn('stock_par_point.product_id', 'products.id')
+                ->where('stock_par_point.point_de_vente_id', $pdvId)
+                ->whereRaw('stock_par_point.quantite > 0')
+                ->whereRaw('stock_par_point.quantite <= products.seuil_alerte')
+            );
+        } elseif ($mode === 'rupture') {
+            $query->where(fn($w) => $w
+                ->whereNotExists(fn($sub) => $sub
+                    ->from('stock_par_point')
+                    ->whereColumn('stock_par_point.product_id', 'products.id')
+                    ->where('stock_par_point.point_de_vente_id', $pdvId)
+                    ->where('stock_par_point.quantite', '>', 0)
+                )
+            );
+        } else {
+            // Both alerte + rupture (for WhatsApp notify)
+            $query->where(fn($w) => $w
+                ->whereExists(fn($sub) => $sub
+                    ->from('stock_par_point')
+                    ->whereColumn('stock_par_point.product_id', 'products.id')
+                    ->where('stock_par_point.point_de_vente_id', $pdvId)
+                    ->whereRaw('stock_par_point.quantite <= products.seuil_alerte')
+                )
+                ->orWhereNotExists(fn($sub) => $sub
+                    ->from('stock_par_point')
+                    ->whereColumn('stock_par_point.product_id', 'products.id')
+                    ->where('stock_par_point.point_de_vente_id', $pdvId)
+                    ->where('stock_par_point.quantite', '>', 0)
+                )
+            );
+            $query->limit(30);
+        }
+
+        $products = $query->get(['id', 'nom', 'reference', 'quantite', 'seuil_alerte', 'unite_mesure', 'category_id']);
+
+        // Override quantite with per-PDV stock
+        $stockMap = StockParPoint::where('point_de_vente_id', $pdvId)
+            ->whereIn('product_id', $products->pluck('id'))
+            ->pluck('quantite', 'product_id');
+
+        $products->each(function (Product $p) use ($stockMap) {
+            $p->quantite = (float) ($stockMap[$p->id] ?? 0.0);
+        });
+
+        return $products;
     }
 
     public function aiSuggestions(): JsonResponse

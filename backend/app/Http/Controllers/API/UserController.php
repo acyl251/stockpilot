@@ -17,8 +17,9 @@ class UserController extends Controller
     {
         $users = User::withoutGlobalScopes()
             ->where('organisation_id', app('current_organisation_id'))
+            ->with('pointDeVente:id,nom')
             ->orderBy('nom')
-            ->get(['id', 'nom', 'prenom', 'email', 'role', 'actif', 'created_at']);
+            ->get(['id', 'nom', 'prenom', 'email', 'role', 'actif', 'point_de_vente_id', 'created_at']);
 
         return response()->json($users);
     }
@@ -31,11 +32,12 @@ class UserController extends Controller
         }
 
         $data = $request->validate([
-            'nom'     => 'required|string|max:100',
-            'prenom'  => 'required|string|max:100',
-            'email'   => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8',
-            'role'    => 'required|in:admin,gestionnaire,operateur',
+            'nom'              => 'required|string|max:100',
+            'prenom'           => 'required|string|max:100',
+            'email'            => 'required|email|unique:users,email',
+            'password'         => 'required|string|min:8',
+            'role'             => 'required|in:admin,gestionnaire,operateur',
+            'point_de_vente_id' => 'nullable|integer|exists:points_de_vente,id',
         ]);
 
         $data['password']        = Hash::make($data['password']);
@@ -43,7 +45,7 @@ class UserController extends Controller
 
         $user = User::create($data);
 
-        return response()->json($user->only(['id', 'nom', 'prenom', 'email', 'role', 'actif']), 201);
+        return response()->json($user->only(['id', 'nom', 'prenom', 'email', 'role', 'actif', 'point_de_vente_id']), 201);
     }
 
     public function update(Request $request, int $id): JsonResponse
@@ -53,11 +55,12 @@ class UserController extends Controller
             ->findOrFail($id);
 
         $data = $request->validate([
-            'nom'     => 'sometimes|required|string|max:100',
-            'prenom'  => 'sometimes|required|string|max:100',
-            'role'    => 'sometimes|required|in:admin,gestionnaire,operateur',
-            'actif'   => 'nullable|boolean',
-            'password' => 'nullable|string|min:8',
+            'nom'              => 'sometimes|required|string|max:100',
+            'prenom'           => 'sometimes|required|string|max:100',
+            'role'             => 'sometimes|required|in:admin,gestionnaire,operateur',
+            'actif'            => 'nullable|boolean',
+            'password'         => 'nullable|string|min:8',
+            'point_de_vente_id' => 'nullable|integer|exists:points_de_vente,id',
         ]);
 
         if (isset($data['password'])) {

@@ -34,9 +34,19 @@ class SaleController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        $currentUser = app('current_user');
+
         $filtered = fn($q) => $q
             ->when($request->date_from, fn($q, $d) => $q->whereDate('date_vente', '>=', $d))
-            ->when($request->date_to, fn($q, $d) => $q->whereDate('date_vente', '<=', $d));
+            ->when($request->date_to, fn($q, $d) => $q->whereDate('date_vente', '<=', $d))
+            ->when(
+                $currentUser->role !== 'admin' && $currentUser->point_de_vente_id,
+                fn($q) => $q->where('point_de_vente_id', $currentUser->point_de_vente_id)
+            )
+            ->when(
+                $currentUser->role === 'admin' && $request->point_de_vente_id,
+                fn($q) => $q->where('point_de_vente_id', $request->point_de_vente_id)
+            );
 
         // Aggregated totals for the current filter — CA excludes cancelled sales.
         $summary = $filtered(Sale::query())
@@ -86,6 +96,15 @@ class SaleController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $currentUser = app('current_user');
+
+        // Bloquer l'opérateur sans PDV assigné
+        if ($currentUser->role === 'operateur' && ! $currentUser->point_de_vente_id) {
+            return response()->json([
+                'message' => 'Votre compte n\'est rattaché à aucun point de vente. Contactez votre administrateur.',
+            ], 422);
+        }
+
         $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
         if (!PlanLimitService::check('ventes_mois', $org)) {
             return response()->json(PlanLimitService::limitResponse('ventes_mois', $org), 403);
@@ -117,13 +136,14 @@ class SaleController extends Controller
 
         $sale = $this->saleService->createSale(
             items:          $data['items'],
-            userId:         app('current_user')->id,
+            userId:         $currentUser->id,
             modePaiement:   $data['mode_paiement'],
             montantPaye:    $data['montant_paye'] ?? null,
             remiseType:     $data['remise_type'] ?? null,
             remiseValeur:   $data['remise_valeur'] ?? null,
             clientId:       $clientId,
             referenceCarte: $data['reference_carte'] ?? null,
+            pointDeVenteId: $currentUser->point_de_vente_id,
         );
 
         $sale->load(['items.product:id,nom,reference', 'user:id,nom,prenom', 'client:id,nom,telephone']);

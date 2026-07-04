@@ -34,6 +34,7 @@ class SaleService
         ?float  $remiseValeur   = null,
         ?int    $clientId       = null,
         ?string $referenceCarte = null,
+        ?int    $pointDeVenteId = null,
     ): Sale {
         if (empty($items)) {
             throw ValidationException::withMessages([
@@ -47,7 +48,7 @@ class SaleService
             ]);
         }
 
-        return DB::transaction(function () use ($items, $userId, $modePaiement, $montantPaye, $remiseType, $remiseValeur, $clientId, $referenceCarte) {
+        return DB::transaction(function () use ($items, $userId, $modePaiement, $montantPaye, $remiseType, $remiseValeur, $clientId, $referenceCarte, $pointDeVenteId) {
             $totalHt  = 0.0;
             $totalTtc = 0.0;
             $lines    = [];
@@ -161,22 +162,23 @@ class SaleService
             }
 
             $sale = Sale::create([
-                'user_id'         => $userId,
-                'client_id'       => $clientId,
-                'reference_carte' => $modePaiement === Sale::MODE_CARTE ? $referenceCarte : null,
-                'numero'          => $this->nextNumero(),
-                'total_ht'       => $totalHt,
-                'total_tva'      => $totalTva,
-                'total_ttc'      => $netTtc,
-                'remise_type'    => $remiseMontant > 0 ? $remiseType : null,
-                'remise_valeur'  => $remiseMontant > 0 ? $remiseValeur : null,
-                'remise_montant' => $remiseMontant,
-                'mode_paiement'  => $modePaiement,
-                'montant_paye'   => $montantPaye,
-                'monnaie_rendue' => $rendu,
-                'montant_regle'  => $montantRegle,
-                'statut'         => Sale::STATUT_PAYEE,
-                'date_vente'     => now(),
+                'user_id'           => $userId,
+                'client_id'         => $clientId,
+                'point_de_vente_id' => $pointDeVenteId,
+                'reference_carte'   => $modePaiement === Sale::MODE_CARTE ? $referenceCarte : null,
+                'numero'            => $this->nextNumero(),
+                'total_ht'         => $totalHt,
+                'total_tva'        => $totalTva,
+                'total_ttc'        => $netTtc,
+                'remise_type'      => $remiseMontant > 0 ? $remiseType : null,
+                'remise_valeur'    => $remiseMontant > 0 ? $remiseValeur : null,
+                'remise_montant'   => $remiseMontant,
+                'mode_paiement'    => $modePaiement,
+                'montant_paye'     => $montantPaye,
+                'monnaie_rendue'   => $rendu,
+                'montant_regle'    => $montantRegle,
+                'statut'           => Sale::STATUT_PAYEE,
+                'date_vente'       => now(),
             ]);
 
             foreach ($lines as $line) {
@@ -196,9 +198,9 @@ class SaleService
                 ]);
 
                 if ($isSupp) {
-                    $this->decrementSupplementStock($line['supplement'], (float) $line['quantite'], $userId, $sale->numero);
+                    $this->decrementSupplementStock($line['supplement'], (float) $line['quantite'], $userId, $sale->numero, $pointDeVenteId);
                 } else {
-                    $this->decrementStock($line['product'], (float) $line['quantite'], $userId, $sale->numero);
+                    $this->decrementStock($line['product'], (float) $line['quantite'], $userId, $sale->numero, $pointDeVenteId);
                 }
             }
 
@@ -282,7 +284,7 @@ class SaleService
      * - Simple product  → one sortie movement (stock enforced).
      * - Composed product → sortie per ingredient (no stock enforcement).
      */
-    private function decrementStock(Product $product, float $quantite, int $userId, string $saleNumero): void
+    private function decrementStock(Product $product, float $quantite, int $userId, string $saleNumero, ?int $pointDeVenteId = null): void
     {
         if ($product->isCompose()) {
             $compositions = Composition::where('produit_compose_id', $product->id)
@@ -290,49 +292,46 @@ class SaleService
                 ->get();
 
             foreach ($compositions as $comp) {
-                // Convert recipe unit → stock unit before decrementing.
-                // e.g. recipe uses 100 g, stock tracks kg → factor = 0.001 → deduct 0.100 kg.
                 $uniteStock   = $comp->composant->unite_mesure ?? '';
                 $uniteRecette = $comp->unite ?? $uniteStock;
                 $factor       = UnitConversionHelper::getConversionFactor($uniteStock, $uniteRecette) ?? 1.0;
 
                 $this->stockService->createMovement(
-                    productId: $comp->composant_id,
-                    userId:    $userId,
-                    type:      StockMovement::TYPE_SORTIE,
-                    quantite:  round((float) $comp->quantite * $quantite * $factor, 3),
-                    note:      "Recette {$product->nom} — vente {$saleNumero}",
-                    enforceStock: false,
+                    productId:      $comp->composant_id,
+                    userId:         $userId,
+                    type:           StockMovement::TYPE_SORTIE,
+                    quantite:       round((float) $comp->quantite * $quantite * $factor, 3),
+                    note:           "Recette {$product->nom} — vente {$saleNumero}",
+                    enforceStock:   false,
+                    pointDeVenteId: $pointDeVenteId,
                 );
             }
         } else {
             $this->stockService->createMovement(
-                productId: $product->id,
-                userId:    $userId,
-                type:      StockMovement::TYPE_SORTIE,
-                quantite:  $quantite,
-                note:      "Vente caisse {$saleNumero}",
+                productId:      $product->id,
+                userId:         $userId,
+                type:           StockMovement::TYPE_SORTIE,
+                quantite:       $quantite,
+                note:           "Vente caisse {$saleNumero}",
+                pointDeVenteId: $pointDeVenteId,
             );
         }
     }
 
-    /**
-     * Decrement ingredient stock when a supplement is sold.
-     * Applies the same unit conversion as the food cost calculation.
-     */
-    private function decrementSupplementStock(Supplement $supp, float $qtySold, int $userId, string $saleNumero): void
+    private function decrementSupplementStock(Supplement $supp, float $qtySold, int $userId, string $saleNumero, ?int $pointDeVenteId = null): void
     {
         $uniteIng  = $supp->ingredient->unite_mesure ?? '';
         $uniteSupp = $supp->unite ?? $uniteIng;
         $factor    = UnitConversionHelper::getConversionFactor($uniteIng, $uniteSupp) ?? 1.0;
 
         $this->stockService->createMovement(
-            productId:    $supp->ingredient_id,
-            userId:       $userId,
-            type:         StockMovement::TYPE_SORTIE,
-            quantite:     round((float) $supp->quantite * $qtySold * $factor, 3),
-            note:         "Supplément {$supp->nom} — vente {$saleNumero}",
-            enforceStock: false,
+            productId:      $supp->ingredient_id,
+            userId:         $userId,
+            type:           StockMovement::TYPE_SORTIE,
+            quantite:       round((float) $supp->quantite * $qtySold * $factor, 3),
+            note:           "Supplément {$supp->nom} — vente {$saleNumero}",
+            enforceStock:   false,
+            pointDeVenteId: $pointDeVenteId,
         );
     }
 

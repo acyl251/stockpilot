@@ -13,6 +13,7 @@ class StockMovement extends BaseModel
         'organisation_id',
         'product_id',
         'user_id',
+        'point_de_vente_id',
         'type_mouvement',
         'quantite',
         'quantite_avant',

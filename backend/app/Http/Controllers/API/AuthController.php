@@ -82,6 +82,6 @@ class AuthController extends Controller
     public function me(): JsonResponse
     {
         $user = app('current_user');
-        return response()->json($user->load('organisation.plan'));
+        return response()->json($user->load('organisation.plan', 'pointDeVente:id,nom,type'));
     }
 }

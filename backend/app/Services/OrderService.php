@@ -13,18 +13,18 @@ class OrderService
 {
     public function __construct(private StockService $stockService) {}
 
-    public function decrementOrderStock(Order $order): void
+    public function decrementOrderStock(Order $order, ?int $pointDeVenteId = null): void
     {
         foreach ($order->items as $item) {
             if ($item->supplement_id) {
                 $supp = Supplement::with('ingredient:id,unite_mesure')->find($item->supplement_id);
                 if ($supp) {
-                    $this->decrementSupplement($supp, $item->quantite, $order->created_by, $order->id);
+                    $this->decrementSupplement($supp, $item->quantite, $order->created_by, $order->id, $pointDeVenteId);
                 }
             } elseif ($item->product_id) {
                 $product = Product::find($item->product_id);
                 if ($product) {
-                    $this->decrementProduct($product, $item->quantite, $order->created_by, $order->id);
+                    $this->decrementProduct($product, $item->quantite, $order->created_by, $order->id, $pointDeVenteId);
                 }
             }
         }
@@ -39,8 +39,7 @@ class OrderService
      */
     public function checkIngredientWarnings(array $items): array
     {
-        // Aggregate needed quantities per ingredient_id
-        $needed = []; // ingredient_id => ['nom' => ..., 'unite' => ..., 'quantite' => float]
+        $needed = [];
 
         foreach ($items as $item) {
             $qty = (int) ($item['quantite'] ?? 1);
@@ -104,7 +103,7 @@ class OrderService
         return $warnings;
     }
 
-    private function decrementProduct(Product $product, int $qty, int $userId, int $orderId): void
+    private function decrementProduct(Product $product, int $qty, int $userId, int $orderId, ?int $pointDeVenteId): void
     {
         if ($product->isCompose()) {
             $compositions = Composition::where('produit_compose_id', $product->id)
@@ -117,38 +116,41 @@ class OrderService
                 $factor = UnitConversionHelper::getConversionFactor($u1, $u2) ?? 1.0;
 
                 $this->stockService->createMovement(
-                    productId:    $comp->composant_id,
-                    userId:       $userId,
-                    type:         StockMovement::TYPE_SORTIE,
-                    quantite:     round((float) $comp->quantite * $qty * $factor, 3),
-                    note:         "Commande #{$orderId} – {$product->nom}",
-                    enforceStock: false,
+                    productId:      $comp->composant_id,
+                    userId:         $userId,
+                    type:           StockMovement::TYPE_SORTIE,
+                    quantite:       round((float) $comp->quantite * $qty * $factor, 3),
+                    note:           "Commande #{$orderId} – {$product->nom}",
+                    enforceStock:   false,
+                    pointDeVenteId: $pointDeVenteId,
                 );
             }
         } else {
             $this->stockService->createMovement(
-                productId: $product->id,
-                userId:    $userId,
-                type:      StockMovement::TYPE_SORTIE,
-                quantite:  (float) $qty,
-                note:      "Commande #{$orderId}",
+                productId:      $product->id,
+                userId:         $userId,
+                type:           StockMovement::TYPE_SORTIE,
+                quantite:       (float) $qty,
+                note:           "Commande #{$orderId}",
+                pointDeVenteId: $pointDeVenteId,
             );
         }
     }
 
-    private function decrementSupplement(Supplement $supp, int $qty, int $userId, int $orderId): void
+    private function decrementSupplement(Supplement $supp, int $qty, int $userId, int $orderId, ?int $pointDeVenteId): void
     {
         $u1     = $supp->ingredient->unite_mesure ?? '';
         $u2     = $supp->unite ?? $u1;
         $factor = UnitConversionHelper::getConversionFactor($u1, $u2) ?? 1.0;
 
         $this->stockService->createMovement(
-            productId:    $supp->ingredient_id,
-            userId:       $userId,
-            type:         StockMovement::TYPE_SORTIE,
-            quantite:     round((float) $supp->quantite * $qty * $factor, 3),
-            note:         "Supplément {$supp->nom} – Commande #{$orderId}",
-            enforceStock: false,
+            productId:      $supp->ingredient_id,
+            userId:         $userId,
+            type:           StockMovement::TYPE_SORTIE,
+            quantite:       round((float) $supp->quantite * $qty * $factor, 3),
+            note:           "Supplément {$supp->nom} – Commande #{$orderId}",
+            enforceStock:   false,
+            pointDeVenteId: $pointDeVenteId,
         );
     }
 }

@@ -17,11 +17,22 @@ class StockMovementController extends Controller
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        $user = app('current_user');
+
         $query = StockMovement::with(['product', 'user'])
-            ->when($request->product_id, fn($q, $id) => $q->where('product_id', $id))
-            ->when($request->type_mouvement, fn($q, $t) => $q->where('type_mouvement', $t))
-            ->when($request->date_from, fn($q, $d) => $q->whereDate('date_mouvement', '>=', $d))
-            ->when($request->date_to, fn($q, $d) => $q->whereDate('date_mouvement', '<=', $d))
+            ->when($request->product_id, fn($q, $id) => $q->where('stock_movements.product_id', $id))
+            ->when($request->type_mouvement, fn($q, $t) => $q->where('stock_movements.type_mouvement', $t))
+            ->when($request->date_from, fn($q, $d) => $q->whereDate('stock_movements.date_mouvement', '>=', $d))
+            ->when($request->date_to, fn($q, $d) => $q->whereDate('stock_movements.date_mouvement', '<=', $d))
+            ->when(
+                // Opérateur : filtre auto sur son PDV ; admin avec filtre explicite
+                $user->role !== 'admin' && $user->point_de_vente_id,
+                fn($q) => $q->where('stock_movements.point_de_vente_id', $user->point_de_vente_id)
+            )
+            ->when(
+                $user->role === 'admin' && $request->point_de_vente_id,
+                fn($q) => $q->where('stock_movements.point_de_vente_id', $request->point_de_vente_id)
+            )
             ->latest('date_mouvement');
 
         return StockMovementResource::collection($query->paginate($request->per_page ?? 25));
@@ -29,6 +40,15 @@ class StockMovementController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $user = app('current_user');
+
+        // Bloquer l'opérateur sans PDV assigné
+        if ($user->role === 'operateur' && ! $user->point_de_vente_id) {
+            return response()->json([
+                'message' => 'Votre compte n\'est rattaché à aucun point de vente. Contactez votre administrateur.',
+            ], 422);
+        }
+
         $validated = $request->validate([
             'product_id'     => 'required|integer',
             'type_mouvement' => 'required|in:entree,sortie,ajustement',
@@ -37,13 +57,16 @@ class StockMovementController extends Controller
             'date_mouvement' => 'nullable|date',
         ]);
 
+        $pointDeVenteId = $user->point_de_vente_id;
+
         $movement = $this->stockService->createMovement(
             productId:      $validated['product_id'],
-            userId:         app('current_user')->id,
+            userId:         $user->id,
             type:           $validated['type_mouvement'],
             quantite:       $validated['quantite'],
             note:           $validated['note'] ?? null,
             dateMouvement:  $validated['date_mouvement'] ?? null,
+            pointDeVenteId: $pointDeVenteId,
         );
 
         $movement->load(['product', 'user']);

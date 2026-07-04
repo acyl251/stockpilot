@@ -36,6 +36,7 @@ class User extends Authenticatable implements JWTSubject
         'email',
         'password',
         'role',
+        'point_de_vente_id',
         'actif',
         'tentatives_connexion',
         'verrouille_jusqu_a',
@@ -68,6 +69,11 @@ class User extends Authenticatable implements JWTSubject
     public function organisation(): BelongsTo
     {
         return $this->belongsTo(Organisation::class);
+    }
+
+    public function pointDeVente(): BelongsTo
+    {
+        return $this->belongsTo(PointDeVente::class);
     }
 
     public function stockMovements(): HasMany

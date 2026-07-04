@@ -4,27 +4,31 @@ namespace App\Services;
 
 use App\Models\Product;
 use App\Models\StockMovement;
+use App\Models\StockParPoint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class StockService
 {
-    /**
-     * Create a stock movement and let the Oracle trigger update the product quantity.
-     */
     public function createMovement(
         int     $productId,
         int     $userId,
         string  $type,
         float   $quantite,
-        ?string $note          = null,
-        ?string $dateMouvement = null,
-        bool    $enforceStock  = true,
+        ?string $note           = null,
+        ?string $dateMouvement  = null,
+        bool    $enforceStock   = true,
+        ?int    $pointDeVenteId = null,
     ): StockMovement {
         $product = Product::lockForUpdate()->findOrFail($productId);
 
-        // $enforceStock = false → on autorise le sur-débit (ex : ingrédients d'une
-        // recette) sans bloquer la vente ; la quantité reste plancher à 0.
+        if ($pointDeVenteId !== null) {
+            return $this->createMovementWithPoint(
+                $product, $userId, $type, $quantite, $note, $dateMouvement, $enforceStock, $pointDeVenteId
+            );
+        }
+
+        // ── Mode global (pas de PDV) — comportement original ──────────────
         if ($enforceStock && $type === StockMovement::TYPE_SORTIE && $product->quantite < $quantite) {
             throw ValidationException::withMessages([
                 'quantite' => "Stock insuffisant. Disponible: {$product->quantite} {$product->unite_mesure}.",
@@ -51,8 +55,6 @@ class StockService
                 'date_mouvement' => $dateMouvement ?? now(),
             ]);
 
-            // On Oracle, trg_update_stock handles this at DB level.
-            // On other drivers (SQLite for local dev), update in PHP.
             if (DB::connection()->getDriverName() !== 'oracle') {
                 $product->updateQuietly(['quantite' => $quantiteApres]);
             }
@@ -61,9 +63,61 @@ class StockService
         });
     }
 
-    /**
-     * Get products currently below alert threshold.
-     */
+    private function createMovementWithPoint(
+        Product $product,
+        int     $userId,
+        string  $type,
+        float   $quantite,
+        ?string $note,
+        ?string $dateMouvement,
+        bool    $enforceStock,
+        int     $pointDeVenteId,
+    ): StockMovement {
+        return DB::transaction(function () use (
+            $product, $userId, $type, $quantite, $note, $dateMouvement, $enforceStock, $pointDeVenteId
+        ) {
+            $stockPoint = StockParPoint::lockForUpdate()
+                ->firstOrCreate(
+                    ['product_id' => $product->id, 'point_de_vente_id' => $pointDeVenteId],
+                    ['organisation_id' => app('current_organisation_id'), 'quantite' => 0],
+                );
+
+            $qtePoint = (float) $stockPoint->quantite;
+
+            if ($enforceStock && $type === StockMovement::TYPE_SORTIE && $qtePoint < $quantite) {
+                throw ValidationException::withMessages([
+                    'quantite' => "Stock insuffisant sur ce point de vente. Disponible: {$qtePoint} {$product->unite_mesure}.",
+                ]);
+            }
+
+            $qtePointApres = match ($type) {
+                StockMovement::TYPE_ENTREE => $qtePoint + $quantite,
+                StockMovement::TYPE_SORTIE => max(0, $qtePoint - $quantite),
+                StockMovement::TYPE_AJUST  => $quantite,
+            };
+
+            $stockPoint->updateQuietly(['quantite' => $qtePointApres]);
+
+            // Recalcul du stock global = SUM de tous les points
+            $stockGlobal = StockParPoint::where('product_id', $product->id)->sum('quantite');
+            $product->updateQuietly(['quantite' => $stockGlobal]);
+
+            $movement = StockMovement::create([
+                'product_id'       => $product->id,
+                'user_id'          => $userId,
+                'point_de_vente_id' => $pointDeVenteId,
+                'type_mouvement'   => $type,
+                'quantite'         => $quantite,
+                'quantite_avant'   => $product->quantite,
+                'quantite_apres'   => $stockGlobal,
+                'note'             => $note,
+                'date_mouvement'   => $dateMouvement ?? now(),
+            ]);
+
+            return $movement;
+        });
+    }
+
     public function getAlertProducts(): \Illuminate\Database\Eloquent\Collection
     {
         return Product::whereRaw('quantite <= seuil_alerte')
@@ -74,9 +128,6 @@ class StockService
             ->get();
     }
 
-    /**
-     * Get stock valuation by category.
-     */
     public function getStockValuation(): array
     {
         return Product::where('actif', true)

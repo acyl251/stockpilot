@@ -211,6 +211,16 @@ export const activityLogsApi = {
   export: (params?: object) => api.get('/activity-logs/export', { params, responseType: 'blob' }),
 }
 
+// ─── Points de vente ──────────────────────────────────────────────────────────
+export const pointsDeVenteApi = {
+  list:     ()                          => api.get('/points-de-vente'),
+  create:   (data: object)              => api.post('/points-de-vente', data),
+  update:   (id: number, data: object)  => api.patch(`/points-de-vente/${id}`, data),
+  destroy:  (id: number)                => api.delete(`/points-de-vente/${id}`),
+  stock:    (id: number)                => api.get(`/points-de-vente/${id}/stock`),
+  transfer: (data: object)              => api.post('/points-de-vente/transfer', data),
+}
+
 // ─── Public ────────────────────────────────────────────────────────────────────
 export const publicApi = {
   sendDemoRequest: (data: object) => api.post('/demo-request', data),

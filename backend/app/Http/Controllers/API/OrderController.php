@@ -152,8 +152,9 @@ class OrderController extends Controller
             return response()->json(['message' => 'Cette commande ne peut pas être envoyée.'], 422);
         }
 
-        DB::transaction(function () use ($order) {
-            $this->orderService->decrementOrderStock($order);
+        $currentUser = app('current_user');
+        DB::transaction(function () use ($order, $currentUser) {
+            $this->orderService->decrementOrderStock($order, $currentUser->point_de_vente_id);
             $order->update(['statut' => Order::STATUT_ENVOYEE]);
 
             if ($order->table_id) {

@@ -24,6 +24,7 @@ use App\Http\Controllers\API\ProductTypeController;
 use App\Http\Controllers\API\SaleController;
 use App\Http\Controllers\API\StockMovementController;
 use App\Http\Controllers\API\UserController;
+use App\Http\Controllers\API\PointDeVenteController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public ───────────────────────────────────────────────────────────────────
@@ -153,6 +154,14 @@ Route::middleware('auth.tenant')->group(function () {
     Route::post('/users',         [UserController::class, 'store']);
     Route::patch('/users/{id}',   [UserController::class, 'update']);
     Route::delete('/users/{id}',  [UserController::class, 'destroy']);
+
+    // Points de vente
+    Route::get('/points-de-vente',                         [PointDeVenteController::class, 'index']);
+    Route::post('/points-de-vente',                        [PointDeVenteController::class, 'store']);
+    Route::patch('/points-de-vente/{id}',                  [PointDeVenteController::class, 'update']);
+    Route::delete('/points-de-vente/{id}',                 [PointDeVenteController::class, 'destroy']);
+    Route::get('/points-de-vente/{id}/stock',              [PointDeVenteController::class, 'stock']);
+    Route::post('/points-de-vente/transfer',               [PointDeVenteController::class, 'transfer']);
 
     // Super-Admin Platform Dashboard
     Route::middleware('super.admin')->prefix('super-admin')->group(function () {

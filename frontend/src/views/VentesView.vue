@@ -15,6 +15,12 @@
         </div>
         <button @click="setToday" class="text-sm text-gold hover:underline pb-2">Aujourd'hui</button>
         <button @click="clearDates" class="text-sm text-slate-400 hover:underline pb-2">Tout</button>
+        <select v-if="auth.isAdmin && pointsDeVente.length > 0"
+          v-model="filterPdv" @change="() => { page = 1; fetchSales() }"
+          class="border border-slate-300 rounded-lg px-3 py-2 text-sm">
+          <option value="">Tous les points de vente</option>
+          <option v-for="pdv in pointsDeVente" :key="pdv.id" :value="pdv.id">{{ pdv.nom }}</option>
+        </select>
         <button @click="exportCsv" class="btn-primary text-sm py-2 px-4">Exporter CSV</button>
       </div>
       <div class="flex gap-3">
@@ -154,31 +160,34 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { salesApi } from '@/services/api'
+import { salesApi, pointsDeVenteApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { printReceipt } from '@/utils/print'
 
 const auth = useAuthStore()
 const orgName = auth.user?.organisation?.nom ?? 'StockPilot'
 
-const sales = ref<any[]>([])
-const summary = ref({ nb_ventes: 0, nb_annulees: 0, ca_ttc: 0 })
-const pagination = ref({ current_page: 1, last_page: 1, total: 0 })
-const loading = ref(false)
-const detail = ref<any>(null)
+const sales         = ref<any[]>([])
+const summary       = ref({ nb_ventes: 0, nb_annulees: 0, ca_ttc: 0 })
+const pagination    = ref({ current_page: 1, last_page: 1, total: 0 })
+const loading       = ref(false)
+const detail        = ref<any>(null)
+const pointsDeVente = ref<any[]>([])
+const filterPdv     = ref<number | ''>('')
 
-const today = new Date().toISOString().slice(0, 10)
+const today    = new Date().toISOString().slice(0, 10)
 const dateFrom = ref(today)
-const dateTo = ref(today)
-const page = ref(1)
+const dateTo   = ref(today)
+const page     = ref(1)
 
 async function fetchSales() {
   loading.value = true
   try {
     const { data } = await salesApi.list({
-      date_from: dateFrom.value || undefined,
-      date_to: dateTo.value || undefined,
-      page: page.value,
+      date_from:         dateFrom.value || undefined,
+      date_to:           dateTo.value || undefined,
+      page:              page.value,
+      point_de_vente_id: filterPdv.value || undefined,
     })
     sales.value = data.data
     summary.value = data.summary ?? { nb_ventes: 0, nb_annulees: 0, ca_ttc: 0 }
@@ -284,5 +293,10 @@ function doPrint() {
   })
 }
 
-onMounted(fetchSales)
+onMounted(async () => {
+  if (auth.isAdmin) {
+    try { const { data } = await pointsDeVenteApi.list(); pointsDeVente.value = data } catch {}
+  }
+  fetchSales()
+})
 </script>

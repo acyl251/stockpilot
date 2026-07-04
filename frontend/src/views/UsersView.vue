@@ -81,6 +81,7 @@
               <th class="px-4 py-3 text-left">Nom</th>
               <th class="px-4 py-3 text-left">Email</th>
               <th class="px-4 py-3 text-left">Rôle</th>
+              <th class="px-4 py-3 text-left">Point de vente</th>
               <th class="px-4 py-3 text-left">Statut</th>
               <th v-if="auth.isAdmin" class="px-4 py-3 text-left">Actions</th>
             </tr>
@@ -96,6 +97,9 @@
                 <span :class="roleBadge(u.role)" class="px-2 py-0.5 rounded-full text-xs font-medium">
                   {{ u.role }}
                 </span>
+              </td>
+              <td class="px-4 py-3 text-gray-500 text-sm">
+                {{ u.point_de_vente?.nom ?? '—' }}
               </td>
               <td class="px-4 py-3">
                 <span :class="u.actif ? 'text-green-600' : 'text-red-500'" class="text-xs font-medium">
@@ -147,6 +151,13 @@
               <option value="admin">Admin</option>
             </select>
           </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Point de vente (optionnel)</label>
+            <select v-model="form.point_de_vente_id" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
+              <option :value="null">— Aucun (vue globale) —</option>
+              <option v-for="pdv in pointsDeVente" :key="pdv.id" :value="pdv.id">{{ pdv.nom }}</option>
+            </select>
+          </div>
           <p v-if="error" class="text-red-500 text-xs">{{ error }}</p>
           <div class="flex gap-2 pt-2">
             <button type="button" @click="showForm = false" class="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50">Annuler</button>
@@ -162,18 +173,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { usersApi, superAdminApi } from '@/services/api'
+import { usersApi, superAdminApi, pointsDeVenteApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
 
-const users    = ref<any[]>([])
-const orgs     = ref<any[]>([])
-const loading  = ref(true)
-const showForm = ref(false)
-const saving   = ref(false)
-const error    = ref('')
-const form     = ref({ prenom: '', nom: '', email: '', password: '', role: 'operateur' })
+const users         = ref<any[]>([])
+const orgs          = ref<any[]>([])
+const pointsDeVente = ref<any[]>([])
+const loading       = ref(true)
+const showForm      = ref(false)
+const saving        = ref(false)
+const error         = ref('')
+const form          = ref({ prenom: '', nom: '', email: '', password: '', role: 'operateur', point_de_vente_id: null as number | null })
 
 async function load() {
   try {
@@ -181,8 +193,9 @@ async function load() {
       const { data } = await superAdminApi.users()
       orgs.value = data
     } else {
-      const { data } = await usersApi.list()
-      users.value = Array.isArray(data) ? data : data.data ?? []
+      const [usersRes, pdvRes] = await Promise.all([usersApi.list(), pointsDeVenteApi.list()])
+      users.value = Array.isArray(usersRes.data) ? usersRes.data : usersRes.data.data ?? []
+      pointsDeVente.value = pdvRes.data
     }
   } finally {
     loading.value = false
@@ -221,7 +234,7 @@ async function submitUser() {
   try {
     await usersApi.create(form.value)
     showForm.value = false
-    form.value = { prenom: '', nom: '', email: '', password: '', role: 'operateur' }
+    form.value = { prenom: '', nom: '', email: '', password: '', role: 'operateur', point_de_vente_id: null }
     await load()
   } catch (e: any) {
     error.value = e.response?.data?.message ?? 'Erreur lors de la création.'

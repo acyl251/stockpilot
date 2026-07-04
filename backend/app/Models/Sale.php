@@ -15,6 +15,7 @@ class Sale extends BaseModel
         'user_id',
         'client_id',
         'table_id',
+        'point_de_vente_id',
         'type_commande',
         'reference_carte',
         'numero',

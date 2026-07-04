@@ -10,6 +10,12 @@
           <option value="sortie">Sorties</option>
           <option value="ajustement">Ajustements</option>
         </select>
+        <select v-if="auth.isAdmin && pointsDeVente.length > 0"
+          v-model="filterPdv" @change="fetchMovements"
+          class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold">
+          <option value="">Tous les points de vente</option>
+          <option v-for="pdv in pointsDeVente" :key="pdv.id" :value="pdv.id">{{ pdv.nom }}</option>
+        </select>
         <input v-model="filterDateFrom" type="date" @change="fetchMovements"
           class="border border-slate-300 rounded-lg px-3 py-2 text-sm" />
         <input v-model="filterDateTo" type="date" @change="fetchMovements"
@@ -75,21 +81,27 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useMovementsStore } from '@/stores/movements'
+import { useAuthStore } from '@/stores/auth'
+import { pointsDeVenteApi } from '@/services/api'
 import MovementDrawer from '@/components/MovementDrawer.vue'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
-const store         = useMovementsStore()
-const filterType    = ref('')
+const store          = useMovementsStore()
+const auth           = useAuthStore()
+const filterType     = ref('')
 const filterDateFrom = ref('')
-const filterDateTo  = ref('')
-const showForm      = ref(false)
+const filterDateTo   = ref('')
+const filterPdv      = ref<number | ''>('')
+const showForm       = ref(false)
+const pointsDeVente  = ref<any[]>([])
 
 function fetchMovements() {
   store.fetchMovements({
-    type_mouvement: filterType.value    || undefined,
-    date_from:      filterDateFrom.value || undefined,
-    date_to:        filterDateTo.value  || undefined,
+    type_mouvement:    filterType.value     || undefined,
+    date_from:         filterDateFrom.value || undefined,
+    date_to:           filterDateTo.value   || undefined,
+    point_de_vente_id: filterPdv.value      || undefined,
   })
 }
 
@@ -102,5 +114,10 @@ function onSaved() {
   fetchMovements()
 }
 
-onMounted(fetchMovements)
+onMounted(async () => {
+  if (auth.isAdmin) {
+    try { const { data } = await pointsDeVenteApi.list(); pointsDeVente.value = data } catch {}
+  }
+  fetchMovements()
+})
 </script>

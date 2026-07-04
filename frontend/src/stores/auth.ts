@@ -9,6 +9,8 @@ interface User {
   email: string
   role: string
   organisation_id: number
+  point_de_vente_id?: number | null
+  point_de_vente?: { id: number; nom: string; type: string } | null
   organisation?: {
     id: number
     nom: string
@@ -25,11 +27,13 @@ export const useAuthStore = defineStore('auth', () => {
   const user          = ref<User | null>(null)
   const accessToken   = ref<string | null>(localStorage.getItem('access_token'))
 
-  const isAuthenticated  = computed(() => !!accessToken.value)
-  const hasAI            = computed(() => user.value?.organisation?.plan?.ia_activee ?? false)
-  const isAdmin          = computed(() => ['admin', 'super_admin'].includes(user.value?.role ?? ''))
-  const isSuperAdmin     = computed(() => user.value?.role === 'super_admin')
-  const isRestauration   = computed(() => user.value?.organisation?.secteur === 'restauration')
+  const isAuthenticated   = computed(() => !!accessToken.value)
+  const hasAI             = computed(() => user.value?.organisation?.plan?.ia_activee ?? false)
+  const isAdmin           = computed(() => ['admin', 'super_admin'].includes(user.value?.role ?? ''))
+  const isSuperAdmin      = computed(() => user.value?.role === 'super_admin')
+  const isRestauration    = computed(() => user.value?.organisation?.secteur === 'restauration')
+  const pointDeVenteId    = computed(() => user.value?.point_de_vente_id ?? null)
+  const pointDeVente      = computed(() => user.value?.point_de_vente ?? null)
 
   async function setSession(data: any) {
     accessToken.value = data.access_token
@@ -60,5 +64,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, isRestauration, login, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, isRestauration, pointDeVenteId, pointDeVente, login, logout, fetchMe, initPromise }
 })
