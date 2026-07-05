@@ -107,18 +107,63 @@
                 </span>
               </td>
               <td v-if="auth.isAdmin" class="px-4 py-3">
-                <button
-                  @click="deleteUser(u)"
-                  class="text-xs font-medium text-red-500 hover:text-red-700 hover:underline"
-                >
-                  Supprimer
-                </button>
+                <div class="flex items-center gap-3">
+                  <button @click="openEdit(u)"
+                    class="text-xs font-medium text-slate-500 hover:text-navy hover:underline">
+                    Modifier
+                  </button>
+                  <button @click="deleteUser(u)"
+                    class="text-xs font-medium text-red-500 hover:text-red-700 hover:underline">
+                    Supprimer
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </template>
+
+    <!-- Edit User Modal -->
+    <div v-if="showEditForm" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+        <h2 class="text-lg font-semibold mb-4">Modifier l'utilisateur</h2>
+        <form @submit.prevent="submitEdit" class="space-y-3">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Prénom</label>
+              <input v-model="editForm.prenom" required class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">Nom</label>
+              <input v-model="editForm.nom" required class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Rôle</label>
+            <select v-model="editForm.role" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
+              <option value="operateur">Opérateur</option>
+              <option value="gestionnaire">Gestionnaire</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">Point de vente</label>
+            <select v-model="editForm.point_de_vente_id" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
+              <option :value="null">— Aucun (vue globale) —</option>
+              <option v-for="pdv in pointsDeVente" :key="pdv.id" :value="pdv.id">{{ pdv.nom }}</option>
+            </select>
+          </div>
+          <p v-if="editError" class="text-red-500 text-xs">{{ editError }}</p>
+          <div class="flex gap-2 pt-2">
+            <button type="button" @click="showEditForm = false" class="flex-1 border rounded-lg py-2 text-sm hover:bg-gray-50">Annuler</button>
+            <button type="submit" :disabled="editSaving" class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50">
+              {{ editSaving ? 'Enregistrement…' : 'Enregistrer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 
     <!-- Add User Modal (admin seulement) -->
     <div v-if="showForm" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -187,6 +232,12 @@ const saving        = ref(false)
 const error         = ref('')
 const form          = ref({ prenom: '', nom: '', email: '', password: '', role: 'operateur', point_de_vente_id: null as number | null })
 
+const showEditForm  = ref(false)
+const editSaving    = ref(false)
+const editError     = ref('')
+const editingUser   = ref<any>(null)
+const editForm      = ref({ prenom: '', nom: '', role: 'operateur', point_de_vente_id: null as number | null })
+
 async function load() {
   try {
     if (auth.isSuperAdmin) {
@@ -199,6 +250,29 @@ async function load() {
     }
   } finally {
     loading.value = false
+  }
+}
+
+function openEdit(u: any) {
+  editingUser.value = u
+  editForm.value = { prenom: u.prenom, nom: u.nom, role: u.role, point_de_vente_id: u.point_de_vente_id ?? null }
+  editError.value = ''
+  showEditForm.value = true
+}
+
+async function submitEdit() {
+  editSaving.value = true
+  editError.value  = ''
+  try {
+    const { data } = await usersApi.update(editingUser.value.id, editForm.value)
+    // Update in-place so table reflects changes without full reload
+    const idx = users.value.findIndex((x: any) => x.id === data.id)
+    if (idx !== -1) users.value[idx] = { ...users.value[idx], ...data }
+    showEditForm.value = false
+  } catch (e: any) {
+    editError.value = e.response?.data?.message ?? 'Erreur lors de la modification.'
+  } finally {
+    editSaving.value = false
   }
 }
 

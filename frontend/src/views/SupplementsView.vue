@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-navy">Suppléments</h1>
-      <button @click="openCreate" class="btn-primary flex items-center gap-2">+ Nouveau supplément</button>
+      <button v-if="!auth.isRestrictedOperateur" @click="openCreate" class="btn-primary flex items-center gap-2">+ Nouveau supplément</button>
     </div>
 
     <div v-if="loading" class="text-center py-16 text-slate-400">Chargement…</div>
@@ -58,7 +58,7 @@
         </template>
 
         <!-- Actions -->
-        <div class="mt-auto flex gap-2 pt-1">
+        <div v-if="!auth.isRestrictedOperateur" class="mt-auto flex gap-2 pt-1">
           <button @click="openEdit(s)"
             class="flex-1 py-1.5 rounded-lg border border-slate-300 text-sm text-slate-700 hover:border-navy hover:text-navy transition">
             Modifier
@@ -146,6 +146,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { supplementsApi, productsApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 import { getConversionFactor } from '@/utils/unitConversion'
 
 interface Ingredient { id: number; nom: string; unite_mesure: string; prix_achat_ht: number }
@@ -155,6 +156,7 @@ interface Supplement {
   ingredient?: { id: number; nom: string; unite_mesure: string; prix_achat: number }
 }
 
+const auth        = useAuthStore()
 const supplements = ref<Supplement[]>([])
 const ingredients = ref<Ingredient[]>([])
 const loading     = ref(false)

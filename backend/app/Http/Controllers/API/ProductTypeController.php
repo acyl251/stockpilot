@@ -18,6 +18,10 @@ class ProductTypeController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $data = $request->validate([
             'nom'         => 'required|string|max:150',
             'icone'       => 'nullable|string|max:50',
@@ -60,6 +64,10 @@ class ProductTypeController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $type = ProductType::findOrFail($id);
 
         $data = $request->validate([
@@ -75,6 +83,10 @@ class ProductTypeController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $type = ProductType::findOrFail($id);
         $type->update(['actif' => false]);
         return response()->json(['message' => 'Type de produit désactivé.']);

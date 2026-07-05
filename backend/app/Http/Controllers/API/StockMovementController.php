@@ -42,6 +42,13 @@ class StockMovementController extends Controller
     {
         $user = app('current_user');
 
+        // Bloquer l'opérateur dans une organisation multi-PDV
+        if ($this->isRestrictedOperateur()) {
+            return response()->json([
+                'message' => 'Dans une chaîne, seul l\'administrateur peut modifier le stock manuellement. Le stock de votre point de vente est alimenté par les transferts.',
+            ], 403);
+        }
+
         // Bloquer l'opérateur sans PDV assigné
         if ($user->role === 'operateur' && ! $user->point_de_vente_id) {
             return response()->json([

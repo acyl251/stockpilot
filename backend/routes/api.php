@@ -29,6 +29,15 @@ use App\Http\Controllers\API\TransfertController;
 use App\Http\Controllers\API\ChaineController;
 use Illuminate\Support\Facades\Route;
 
+// ─── Debug (temporaire) ───────────────────────────────────────────────────────
+Route::get('/debug-time', function () {
+    return [
+        'server_time' => now()->toDateTimeString(),
+        'timezone'    => config('app.timezone'),
+        'today'       => today()->toDateString(),
+    ];
+});
+
 // ─── Public ───────────────────────────────────────────────────────────────────
 Route::post('/auth/login',    [AuthController::class, 'login']);
 Route::post('/demo-request',  [DemoRequestController::class, 'store']);

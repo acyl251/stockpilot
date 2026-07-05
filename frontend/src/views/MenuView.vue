@@ -3,7 +3,7 @@
     <!-- Header -->
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-navy">Menu</h1>
-      <button @click="openCreate" class="btn-primary flex items-center gap-2">
+      <button v-if="!auth.isRestrictedOperateur" @click="openCreate" class="btn-primary flex items-center gap-2">
         + Nouveau plat
       </button>
     </div>
@@ -125,7 +125,7 @@
         </template>
 
         <!-- Action button -->
-        <div class="mt-auto pt-1">
+        <div v-if="!auth.isRestrictedOperateur" class="mt-auto pt-1">
           <button @click="openEdit(p)"
             :class="['w-full py-2 rounded-lg text-sm font-medium transition',
               nbIngredients(p.id) > 0
@@ -152,6 +152,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { productsApi, compositionApi } from '@/services/api'
 import { useProductsStore } from '@/stores/products'
+import { useAuthStore } from '@/stores/auth'
 import ProductFormModal from '@/components/ProductFormModal.vue'
 
 interface Category { id: number; nom: string; couleur: string }
@@ -171,6 +172,7 @@ interface FoodCost {
 }
 
 const store   = useProductsStore()
+const auth    = useAuthStore()
 const loading = ref(false)
 const products      = ref<Product[]>([])
 const compositionMap = ref<Record<number, CompositionLine[]>>({})

@@ -18,4 +18,17 @@ abstract class Controller
             'errors'  => $errors,
         ], $status);
     }
+
+    /**
+     * Returns true when the current user is an operator in a multi-PDV organisation.
+     * In that case, only read operations and sales are allowed — all catalogue/stock
+     * mutations are reserved for the admin.
+     */
+    protected function isRestrictedOperateur(): bool
+    {
+        $user = app('current_user');
+        if ($user->role !== 'operateur') return false;
+        // TenantScope is active in request context → count() filters on current org automatically.
+        return \App\Models\PointDeVente::where('actif', true)->count() > 1;
+    }
 }

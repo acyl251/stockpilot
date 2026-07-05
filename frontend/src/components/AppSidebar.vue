@@ -61,7 +61,7 @@ const navItems = computed(() => {
     { to: '/app/ventes',   icon: 'ventes',    label: 'Ventes', badge: undefined },
     { to: '/app/clients',  icon: 'clients',   label: 'Clients', badge: undefined },
     { to: '/app/movements',      icon: 'movements',    label: 'Mouvements',   badge: undefined },
-    { to: '/app/fournisseurs',   icon: 'fournisseurs', label: 'Fournisseurs', badge: undefined },
+    ...(!auth.isRestrictedOperateur ? [{ to: '/app/fournisseurs', icon: 'fournisseurs', label: 'Fournisseurs', badge: undefined }] : []),
     { to: '/app/alerts',   icon: 'alerts',    label: 'Alertes',
       badge: alerts.totalAlerts() || undefined },
     { to: '/app/config',   icon: 'config',    label: 'Configuration', badge: undefined },

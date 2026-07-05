@@ -8,6 +8,7 @@ use App\Models\StockParPoint;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PointDeVenteController extends Controller
 {
@@ -52,12 +53,43 @@ class PointDeVenteController extends Controller
     {
         $pdv = PointDeVente::findOrFail($id);
 
-        // Désassigner les utilisateurs rattachés
-        User::withoutGlobalScopes()
+        // 1. Bloquer si stock encore présent
+        $hasStock = StockParPoint::where('point_de_vente_id', $id)
+            ->where('quantite', '>', 0)
+            ->exists();
+
+        if ($hasStock) {
+            return response()->json([
+                'message' => 'Impossible de supprimer : ce point de vente a encore du stock. Transférez-le d\'abord vers un autre point.',
+            ], 422);
+        }
+
+        // 2. Bloquer si des utilisateurs sont rattachés
+        $usersCount = User::withoutGlobalScopes()
             ->where('organisation_id', app('current_organisation_id'))
             ->where('point_de_vente_id', $id)
-            ->update(['point_de_vente_id' => null]);
+            ->whereNull('deleted_at')
+            ->count();
 
+        if ($usersCount > 0) {
+            return response()->json([
+                'message' => "Impossible de supprimer : {$usersCount} utilisateur(s) sont rattachés à ce point. Réaffectez-les d'abord.",
+            ], 422);
+        }
+
+        // 3. Si des ventes historiques existent → désactivation douce
+        $hasSales = DB::table('sales')->where('point_de_vente_id', $id)->exists();
+
+        if ($hasSales) {
+            $pdv->update(['actif' => false]);
+            return response()->json([
+                'message'  => 'Ce point a un historique de ventes. Il a été désactivé au lieu d\'être supprimé, pour préserver l\'historique.',
+                'desactive' => true,
+            ]);
+        }
+
+        // 4. Aucune dépendance : suppression physique
+        StockParPoint::where('point_de_vente_id', $id)->delete();
         $pdv->delete();
 
         return response()->json(['message' => 'Point de vente supprimé.']);

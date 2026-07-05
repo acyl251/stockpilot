@@ -11,9 +11,9 @@
           <option v-for="pdv in pointsVente" :key="pdv.id" :value="pdv.id">{{ pdv.nom }}</option>
         </select>
       </div>
-      <!-- Info PDV pour admin avec point rattaché -->
-      <div v-else-if="auth.isAdmin && auth.pointDeVente" class="text-xs text-slate-400 px-1">
-        Vente depuis : <span class="font-medium text-navy">{{ auth.pointDeVente.nom }}</span>
+      <!-- Info PDV pour admin (PDV assigné ou auto-sélectionné en mono-PDV) -->
+      <div v-else-if="auth.isAdmin && effectivePdvNom" class="text-xs text-slate-400 px-1">
+        Vente depuis : <span class="font-medium text-navy">{{ effectivePdvNom }}</span>
       </div>
 
       <div class="flex gap-3">
@@ -324,18 +324,28 @@ interface Client { id: number; nom: string; telephone?: string; solde?: number }
 const auth = useAuthStore()
 const orgName = computed(() => auth.user?.organisation?.nom ?? 'StockPilot')
 
-// PDV de vente pour l'admin sans PDV assigné
+// PDV de vente — résolution pour admin sans PDV assigné
 interface Pdv { id: number; nom: string; type: string }
-const pointsVente      = ref<Pdv[]>([])
-const caissePointId    = ref<number | null>(null)
-// Admin qui a un PDV assigné → pas besoin du sélecteur
+const pointsVente   = ref<Pdv[]>([])
+const caissePointId = ref<number | null>(null)
+
+// Sélecteur visible uniquement si : admin sans PDV assigné ET plusieurs PDVs disponibles
 const needsPdvSelector = computed(() =>
-  auth.isAdmin && !auth.pointDeVenteId
+  auth.isAdmin && !auth.pointDeVenteId && pointsVente.value.length > 1
 )
-// PDV effectif utilisé pour la vente
+
+// PDV effectif : priorité au PDV assigné, sinon au choix du sélecteur (ou auto-sélection mono-PDV)
 const effectivePdvId = computed<number | null>(() =>
-  auth.pointDeVenteId ?? (needsPdvSelector.value ? caissePointId.value : null)
+  auth.pointDeVenteId ?? caissePointId.value ?? null
 )
+
+// Nom du PDV effectif pour l'info-label
+const effectivePdvNom = computed<string | null>(() => {
+  if (auth.pointDeVente) return auth.pointDeVente.nom
+  if (caissePointId.value)
+    return pointsVente.value.find(p => p.id === caissePointId.value)?.nom ?? null
+  return null
+})
 
 // Stock-warning modal state (restauration only)
 const showStockWarning = ref(false)
@@ -636,13 +646,19 @@ function doPrint() {
 }
 
 onMounted(async () => {
-  await fetchProducts()
-  if (needsPdvSelector.value) {
-    try {
-      const { data } = await pointsDeVenteApi.list({ type: 'point_vente' })
-      pointsVente.value = data
-      if (data.length === 1) caissePointId.value = data[0].id
-    } catch {}
+  // Charger PDVs en parallèle des produits pour tout admin sans PDV assigné
+  const tasks: Promise<any>[] = [fetchProducts()]
+
+  if (auth.isAdmin && !auth.pointDeVenteId) {
+    tasks.push(
+      pointsDeVenteApi.list({ type: 'point_vente' }).then(({ data }) => {
+        pointsVente.value = data
+        // Mono-PDV : auto-sélection silencieuse, pas de sélecteur affiché
+        if (data.length === 1) caissePointId.value = data[0].id
+      }).catch(() => {})
+    )
   }
+
+  await Promise.all(tasks)
 })
 </script>

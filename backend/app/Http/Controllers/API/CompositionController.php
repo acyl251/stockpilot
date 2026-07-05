@@ -100,6 +100,9 @@ class CompositionController extends Controller
     /** POST /products/{product}/composition */
     public function store(Request $request, int $productId): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
         if ($error = $this->requireRestauration()) return $error;
 
         $product = Product::findOrFail($productId);
@@ -128,6 +131,9 @@ class CompositionController extends Controller
     /** PATCH /products/{product}/composition/{composition} */
     public function update(Request $request, int $productId, int $compositionId): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
         if ($error = $this->requireRestauration()) return $error;
 
         $comp = Composition::where('produit_compose_id', $productId)->findOrFail($compositionId);
@@ -145,6 +151,9 @@ class CompositionController extends Controller
     /** DELETE /products/{product}/composition/{composition} */
     public function destroy(int $productId, int $compositionId): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
         if ($error = $this->requireRestauration()) return $error;
 
         $comp = Composition::where('produit_compose_id', $productId)->findOrFail($compositionId);

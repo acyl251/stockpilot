@@ -21,7 +21,14 @@
         <input v-model="filterDateTo" type="date" @change="fetchMovements"
           class="border border-slate-300 rounded-lg px-3 py-2 text-sm" />
       </div>
-      <button @click="showForm = true" class="btn-primary">+ Nouveau mouvement</button>
+      <button v-if="!auth.isRestrictedOperateur" @click="showForm = true" class="btn-primary">+ Nouveau mouvement</button>
+    </div>
+
+    <!-- Bandeau info opérateur multi-PDV -->
+    <div v-if="auth.isRestrictedOperateur"
+      class="flex items-center gap-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl px-4 py-3 text-sm">
+      <span class="text-lg">ℹ️</span>
+      <span>Le stock de votre point de vente est géré par l'administrateur via les transferts.</span>
     </div>
 
     <!-- Table -->

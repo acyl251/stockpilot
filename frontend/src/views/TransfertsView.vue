@@ -7,7 +7,35 @@
         <h1 class="text-2xl font-bold text-navy">Transferts de stock</h1>
         <p class="text-slate-500 text-sm mt-1">Déplacez du stock entre vos points de vente</p>
       </div>
-      <button @click="openModal" class="btn-primary">+ Nouveau transfert</button>
+      <button v-if="!auth.isRestrictedOperateur" @click="openModal" class="btn-primary">+ Nouveau transfert</button>
+    </div>
+
+    <!-- ── Filtres ───────────────────────────────────────────────────── -->
+    <div class="flex flex-wrap gap-3 items-center">
+      <!-- Presets -->
+      <div class="flex gap-1">
+        <button v-for="p in presets" :key="p.key" @click="applyPreset(p.key)"
+          :class="['px-3 py-1.5 rounded-lg text-sm font-medium transition border',
+            activePreset === p.key
+              ? 'bg-navy text-white border-navy'
+              : 'bg-white border-slate-200 text-slate-600 hover:border-gold hover:text-gold']">
+          {{ p.label }}
+        </button>
+      </div>
+      <!-- Du / Au -->
+      <div class="flex items-center gap-2">
+        <input v-model="filterDateDebut" type="date" @change="onFilterChange"
+          class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+        <span class="text-slate-400 text-sm">→</span>
+        <input v-model="filterDateFin" type="date" @change="onFilterChange"
+          class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+      </div>
+      <!-- PDV filter -->
+      <select v-if="points.length > 0" v-model="filterPoint" @change="onFilterChange"
+        class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold">
+        <option value="">Tous les points</option>
+        <option v-for="pdv in points" :key="pdv.id" :value="pdv.id">{{ pdv.nom }}</option>
+      </select>
     </div>
 
     <!-- ── Historique ─────────────────────────────────────────────────── -->
@@ -216,6 +244,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { transfertsApi, pointsDeVenteApi, productsApi } from '@/services/api'
+import { useAuthStore } from '@/stores/auth'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface Pdv   { id: number; nom: string }
@@ -224,10 +253,49 @@ interface Line  { product_id: number | ''; quantite: number; unite: string }
 interface StockEntry { product_id: number; quantite: number; unite_mesure: string }
 
 // ── State ──────────────────────────────────────────────────────────────────────
+const auth        = useAuthStore()
 const transferts  = ref<any[]>([])
 const pagination  = ref({ current_page: 1, last_page: 1, total: 0 })
 const loading     = ref(true)
 const page        = ref(1)
+
+// ── Filtres ────────────────────────────────────────────────────────────────────
+const filterDateDebut = ref('')
+const filterDateFin   = ref('')
+const filterPoint     = ref<number | ''>('')
+const activePreset    = ref('all')
+
+const presets = [
+  { key: 'today', label: "Aujourd'hui" },
+  { key: 'week',  label: 'Cette semaine' },
+  { key: 'all',   label: 'Tout' },
+]
+
+function applyPreset(key: string) {
+  activePreset.value = key
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  if (key === 'today') {
+    filterDateDebut.value = todayStr
+    filterDateFin.value   = todayStr
+  } else if (key === 'week') {
+    const mon = new Date(now)
+    mon.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+    filterDateDebut.value = `${mon.getFullYear()}-${String(mon.getMonth() + 1).padStart(2, '0')}-${String(mon.getDate()).padStart(2, '0')}`
+    filterDateFin.value   = todayStr
+  } else {
+    filterDateDebut.value = ''
+    filterDateFin.value   = ''
+  }
+  page.value = 1
+  fetchTransferts()
+}
+
+function onFilterChange() {
+  activePreset.value = 'custom'
+  page.value = 1
+  fetchTransferts()
+}
 
 const points      = ref<Pdv[]>([])
 const products    = ref<Prod[]>([])
@@ -279,7 +347,12 @@ function formatDate(d: string): string {
 async function fetchTransferts() {
   loading.value = true
   try {
-    const { data } = await transfertsApi.list({ page: page.value })
+    const { data } = await transfertsApi.list({
+      page:         page.value,
+      date_debut:   filterDateDebut.value || undefined,
+      date_fin:     filterDateFin.value   || undefined,
+      point_id:     filterPoint.value     || undefined,
+    })
     transferts.value = data.data
     pagination.value = { current_page: data.current_page, last_page: data.last_page, total: data.total }
   } finally {

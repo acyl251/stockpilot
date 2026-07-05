@@ -175,7 +175,8 @@ const detail        = ref<any>(null)
 const pointsDeVente = ref<any[]>([])
 const filterPdv     = ref<number | ''>('')
 
-const today    = new Date().toISOString().slice(0, 10)
+const _now     = new Date()
+const today    = `${_now.getFullYear()}-${String(_now.getMonth() + 1).padStart(2, '0')}-${String(_now.getDate()).padStart(2, '0')}`
 const dateFrom = ref(today)
 const dateTo   = ref(today)
 const page     = ref(1)

@@ -19,6 +19,10 @@ class FournisseurController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
         if (!PlanLimitService::check('fournisseurs', $org)) {
             return response()->json(PlanLimitService::limitResponse('fournisseurs', $org), 403);
@@ -38,6 +42,10 @@ class FournisseurController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $fournisseur = Fournisseur::findOrFail($id);
 
         $data = $request->validate([
@@ -55,6 +63,10 @@ class FournisseurController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $fournisseur = Fournisseur::findOrFail($id);
 
         // Soft-deactivate instead of hard delete if commandes exist

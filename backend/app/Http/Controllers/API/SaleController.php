@@ -132,8 +132,16 @@ class SaleController extends Controller
         // Résoudre le PDV de vente :
         // 1. PDV assigné à l'utilisateur (opérateur ou admin avec PDV)
         // 2. PDV envoyé dans le body (admin sans PDV assigné)
+        // 3. Fallback mono-PDV : si l'org n'a qu'un seul point_vente, l'utiliser automatiquement
         $pdvId = $currentUser->point_de_vente_id
             ?? ($isAdmin ? ($data['point_de_vente_id'] ?? null) : null);
+
+        if (! $pdvId && $isAdmin) {
+            $pointsVente = PointDeVente::where('type', 'point_vente')->where('actif', true)->get();
+            if ($pointsVente->count() === 1) {
+                $pdvId = $pointsVente->first()->id;
+            }
+        }
 
         // Un entrepôt ne peut pas être utilisé comme point de vente
         if ($pdvId) {

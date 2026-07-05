@@ -34,6 +34,9 @@ class SupplementController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
         if ($error = $this->requireRestauration()) return $error;
 
         $validated = $request->validate([
@@ -58,6 +61,9 @@ class SupplementController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
         if ($error = $this->requireRestauration()) return $error;
 
         $supplement = Supplement::findOrFail($id);
@@ -85,6 +91,9 @@ class SupplementController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
         if ($error = $this->requireRestauration()) return $error;
 
         Supplement::findOrFail($id)->delete();

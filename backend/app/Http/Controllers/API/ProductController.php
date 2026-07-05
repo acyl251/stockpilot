@@ -104,6 +104,10 @@ class ProductController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
 
         if (!PlanLimitService::check('produits', $org)) {
@@ -165,6 +169,10 @@ class ProductController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $product      = Product::findOrFail($id);
         $org          = Organisation::findOrFail(app('current_organisation_id'));
         $effectiveType = $request->input('type', $product->type ?? Product::TYPE_SIMPLE);
@@ -214,6 +222,10 @@ class ProductController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $product = Product::findOrFail($id);
         $product->update(['actif' => false]);
 

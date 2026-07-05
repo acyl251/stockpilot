@@ -39,6 +39,10 @@ export const useAuthStore = defineStore('auth', () => {
   const chaineVisible     = computed(() =>
     isAdmin.value && (user.value?.organisation?.points_de_vente_count ?? 0) >= 2
   )
+  // Multi-PDV : org avec plusieurs points de vente actifs
+  const isMultiPDV        = computed(() => (user.value?.organisation?.points_de_vente_count ?? 0) > 1)
+  // Opérateur restreint : opérateur dans une org multi-PDV (catalogue/stock en lecture seule)
+  const isRestrictedOperateur = computed(() => isMultiPDV.value && !isAdmin.value)
 
   async function setSession(data: any) {
     accessToken.value = data.access_token
@@ -69,5 +73,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, isRestauration, pointDeVenteId, pointDeVente, chaineVisible, login, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, isRestauration, pointDeVenteId, pointDeVente, chaineVisible, isMultiPDV, isRestrictedOperateur, login, logout, fetchMe, initPromise }
 })

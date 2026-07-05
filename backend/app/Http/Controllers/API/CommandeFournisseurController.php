@@ -34,6 +34,10 @@ class CommandeFournisseurController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $data = $request->validate([
             'fournisseur_id'        => 'required|integer',
             'date_commande'         => 'required|date',
@@ -87,6 +91,10 @@ class CommandeFournisseurController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $commande = CommandeFournisseur::findOrFail($id);
 
         if ($commande->statut === CommandeFournisseur::STATUT_RECUE) {
@@ -131,6 +139,10 @@ class CommandeFournisseurController extends Controller
 
     public function envoyer(int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $commande = CommandeFournisseur::findOrFail($id);
 
         if ($commande->statut !== CommandeFournisseur::STATUT_BROUILLON) {
@@ -149,6 +161,10 @@ class CommandeFournisseurController extends Controller
 
     public function receptionner(Request $request, int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $commande = CommandeFournisseur::with('items.product')->findOrFail($id);
 
         if ($commande->statut !== CommandeFournisseur::STATUT_ENVOYEE) {
@@ -222,6 +238,10 @@ class CommandeFournisseurController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $commande = CommandeFournisseur::findOrFail($id);
 
         if ($commande->statut === CommandeFournisseur::STATUT_RECUE) {

@@ -192,8 +192,11 @@ async function saveForm() {
 async function confirmDelete(pdv: Pdv) {
   if (!confirm(`Supprimer "${pdv.nom}" ?`)) return
   try {
-    await pointsDeVenteApi.destroy(pdv.id)
+    const { data } = await pointsDeVenteApi.destroy(pdv.id)
     await load()
+    if (data?.desactive) {
+      alert(data.message)
+    }
   } catch (e: any) {
     alert(e.response?.data?.message ?? 'Erreur lors de la suppression.')
   }

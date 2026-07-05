@@ -75,7 +75,7 @@
 
     <div class="flex items-center justify-between border-t border-slate-200 pt-6">
       <h2 class="text-lg font-semibold text-navy">Types de produits</h2>
-      <button @click="showTypeForm = true" class="btn-primary">+ Nouveau type</button>
+      <button v-if="!auth.isRestrictedOperateur" @click="showTypeForm = true" class="btn-primary">+ Nouveau type</button>
     </div>
 
     <div v-if="loading" class="text-center py-10 text-slate-400">Chargement…</div>
@@ -113,14 +113,14 @@
     <div class="border-t border-slate-200 pt-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-lg font-semibold text-navy">Catégories</h2>
-        <button @click="openCatCreate" class="btn-secondary text-sm">+ Nouvelle catégorie</button>
+        <button v-if="!auth.isRestrictedOperateur" @click="openCatCreate" class="btn-secondary text-sm">+ Nouvelle catégorie</button>
       </div>
       <div class="flex flex-wrap gap-2">
         <div v-for="c in categories" :key="c.id"
           class="group flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-3 py-2">
           <span class="w-3 h-3 rounded-full" :style="{ backgroundColor: c.couleur }" />
           <span class="text-sm font-medium text-slate-700">{{ c.nom }}</span>
-          <div class="flex items-center gap-1.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div v-if="!auth.isRestrictedOperateur" class="flex items-center gap-1.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button @click="editCategory(c)" title="Modifier"
               class="text-slate-400 hover:text-navy text-xs">✎</button>
             <button @click="deleteCategory(c)" title="Supprimer"

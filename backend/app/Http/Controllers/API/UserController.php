@@ -77,7 +77,8 @@ class UserController extends Controller
             ], 500);
         }
 
-        return response()->json($user->only(['id', 'nom', 'prenom', 'email', 'role', 'actif']));
+        $user->load('pointDeVente:id,nom');
+        return response()->json($user->only(['id', 'nom', 'prenom', 'email', 'role', 'actif', 'point_de_vente_id']) + ['point_de_vente' => $user->pointDeVente]);
     }
 
     public function destroy(int $id): JsonResponse

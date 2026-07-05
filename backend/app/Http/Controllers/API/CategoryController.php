@@ -18,6 +18,10 @@ class CategoryController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $org = Organisation::with('plan')->findOrFail(app('current_organisation_id'));
         if (!PlanLimitService::check('categories', $org)) {
             return response()->json(PlanLimitService::limitResponse('categories', $org), 403);
@@ -34,6 +38,10 @@ class CategoryController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $category = Category::findOrFail($id);
 
         $data = $request->validate([
@@ -49,6 +57,10 @@ class CategoryController extends Controller
 
     public function destroy(int $id): JsonResponse
     {
+        if ($this->isRestrictedOperateur()) {
+            return response()->json(['message' => 'Action non autorisée dans une organisation multi-points de vente.'], 403);
+        }
+
         $category = Category::findOrFail($id);
         $category->update(['actif' => false]);
         return response()->json(['message' => 'Catégorie désactivée.']);

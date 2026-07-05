@@ -18,10 +18,17 @@
           <option v-for="c in store.categories" :key="c.id" :value="c.id">{{ c.nom }}</option>
         </select>
       </div>
-      <button @click="openCreate"
+      <button v-if="!auth.isRestrictedOperateur" @click="openCreate"
         class="btn-primary flex items-center gap-2">
         + Nouveau produit
       </button>
+    </div>
+
+    <!-- Bandeau info opérateur multi-PDV -->
+    <div v-if="auth.isRestrictedOperateur"
+      class="flex items-center gap-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl px-4 py-3 text-sm">
+      <span class="text-lg">ℹ️</span>
+      <span>La gestion du catalogue est réservée à l'administrateur.</span>
     </div>
 
     <!-- Table -->
@@ -79,12 +86,14 @@
                 <RouterLink :to="`/products/${p.id}`" class="text-gold hover:underline text-xs font-medium">
                   Voir
                 </RouterLink>
-                <button @click="openEdit(p)" class="text-slate-500 hover:text-navy text-xs font-medium">
-                  Modifier
-                </button>
-                <button @click="removeProduct(p)" class="text-red-500 hover:text-red-700 text-xs font-medium">
-                  Supprimer
-                </button>
+                <template v-if="!auth.isRestrictedOperateur">
+                  <button @click="openEdit(p)" class="text-slate-500 hover:text-navy text-xs font-medium">
+                    Modifier
+                  </button>
+                  <button @click="removeProduct(p)" class="text-red-500 hover:text-red-700 text-xs font-medium">
+                    Supprimer
+                  </button>
+                </template>
               </div>
             </td>
           </tr>
@@ -113,9 +122,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useProductsStore } from '@/stores/products'
+import { useAuthStore } from '@/stores/auth'
 import ProductFormModal from '@/components/ProductFormModal.vue'
 
 const store         = useProductsStore()
+const auth          = useAuthStore()
 const search        = ref('')
 const filterStatut  = ref('')
 const filterCategory = ref('')

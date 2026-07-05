@@ -33,6 +33,12 @@ class TransfertController extends Controller
                 'createdBy:id,nom,prenom',
             ])
             ->withCount('items')
+            ->when($request->date_debut, fn($q, $d) => $q->whereDate('created_at', '>=', $d))
+            ->when($request->date_fin,   fn($q, $d) => $q->whereDate('created_at', '<=', $d))
+            ->when($request->point_id,   fn($q, $pid) => $q->where(fn($w) => $w
+                ->where('point_source_id', $pid)
+                ->orWhere('point_dest_id', $pid)
+            ))
             ->latest()
             ->paginate($request->per_page ?? 25);
 
