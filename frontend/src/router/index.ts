@@ -49,6 +49,12 @@ const router = createRouter({
         { path: 'chaine',          name: 'chaine',          component: () => import('@/views/ChaineView.vue') },
       ],
     },
+    // Vérification email demande d'accès — public, no auth, no sidebar
+    {
+      path: '/verify-email/:token',
+      name: 'verify-email',
+      component: () => import('@/views/EmailVerificationView.vue'),
+    },
     // Public digital menu — no auth, no sidebar
     {
       path: '/menu/:slug',

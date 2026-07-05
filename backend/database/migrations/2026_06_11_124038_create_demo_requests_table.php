@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('secteur')->nullable();
             $table->string('plan_souhaite')->nullable();
             $table->text('message')->nullable();
-            $table->enum('statut', ['en_attente', 'traite', 'rejete'])->default('en_attente');
+            $table->enum('statut', ['pending_verification', 'en_attente', 'traite', 'rejete'])->default('en_attente');
             $table->timestamps();
         });
     }

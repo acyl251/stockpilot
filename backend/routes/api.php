@@ -28,9 +28,21 @@ use App\Http\Controllers\API\PointDeVenteController;
 use App\Http\Controllers\API\TransfertController;
 use App\Http\Controllers\API\ChaineController;
 use App\Http\Controllers\API\SearchController;
+use App\Http\Controllers\EmailVerificationController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Debug (temporaire) ───────────────────────────────────────────────────────
+Route::get('/test-mail', function () {
+    try {
+        \Mail::raw('Test StockPilot', function ($m) {
+            $m->to('test@test.tn')->subject('Test Mailtrap');
+        });
+        return 'Email envoyé avec succès !';
+    } catch (\Exception $e) {
+        return 'Erreur : ' . $e->getMessage();
+    }
+});
+
 Route::get('/debug-time', function () {
     return [
         'server_time' => now()->toDateTimeString(),
@@ -40,10 +52,11 @@ Route::get('/debug-time', function () {
 });
 
 // ─── Public ───────────────────────────────────────────────────────────────────
-Route::post('/auth/login',    [AuthController::class, 'login']);
-Route::post('/demo-request',  [DemoRequestController::class, 'store']);
-Route::get('/plans',          [SuperAdminController::class, 'plans']);
-Route::get('/public/menu/{slug}', [PublicMenuController::class, 'show']);
+Route::post('/auth/login',         [AuthController::class, 'login']);
+Route::post('/demo-request',       [DemoRequestController::class, 'store']);
+Route::get('/verify-email/{token}', EmailVerificationController::class);
+Route::get('/plans',               [SuperAdminController::class, 'plans']);
+Route::get('/public/menu/{slug}',  [PublicMenuController::class, 'show']);
 
 // ─── Authenticated Tenant Routes ──────────────────────────────────────────────
 Route::middleware('auth.tenant')->group(function () {

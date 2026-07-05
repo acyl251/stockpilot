@@ -659,6 +659,7 @@ async function handleDemo(d: any, statut: string) {
 
 function statutBadge(statut: string) {
   return ({
+    'pending_verification': 'bg-slate-100 text-slate-500',
     'en_attente': 'bg-amber-100 text-amber-700',
     'traite':     'bg-emerald-100 text-emerald-700',
     'rejete':     'bg-red-100 text-red-600',
@@ -666,7 +667,12 @@ function statutBadge(statut: string) {
 }
 
 function statutLabel(statut: string) {
-  return ({ 'en_attente': 'En attente', 'traite': 'Traité', 'rejete': 'Rejeté' } as Record<string, string>)[statut] ?? statut
+  return ({
+    'pending_verification': 'Confirmation email 📧',
+    'en_attente': 'En attente',
+    'traite':     'Traité',
+    'rejete':     'Rejeté',
+  } as Record<string, string>)[statut] ?? statut
 }
 
 function planBadge(plan: string) {

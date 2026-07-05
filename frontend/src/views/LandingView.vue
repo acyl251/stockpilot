@@ -32,7 +32,9 @@
               <div class="form-row">
                 <div class="form-group">
                   <label>Email professionnel *</label>
-                  <input v-model="form.email" type="email" placeholder="vous@societe.com" required/>
+                  <input v-model="form.email" type="email" placeholder="vous@societe.com" required
+                    :style="emailError ? 'border-color:#ef4444' : ''"/>
+                  <span v-if="emailError" style="font-size:12px;color:#fca5a5;margin-top:2px">{{ emailError }}</span>
                 </div>
                 <div class="form-group">
                   <label>Téléphone</label>
@@ -74,9 +76,14 @@
 
           <!-- Succès -->
           <div v-else class="modal-success">
-            <div class="success-icon">✓</div>
-            <h2>Demande envoyée !</h2>
-            <p>Nous avons bien reçu votre demande. Notre équipe vous contactera sous <strong>24 heures</strong> pour finaliser votre accès à StockPilot.</p>
+            <div class="success-icon">📧</div>
+            <h2>Vérifiez votre email !</h2>
+            <p>
+              Nous avons envoyé un lien de confirmation à<br/>
+              <strong>{{ submittedEmail }}</strong>.<br/><br/>
+              Cliquez sur le lien dans l'email pour valider votre demande.<br/>
+              <span style="color:#64748b;font-size:13px">Le lien est valable <strong>48 heures</strong>.</span>
+            </p>
             <button class="submit-btn" @click="closeModal">Fermer</button>
           </div>
         </div>
@@ -368,10 +375,12 @@ onMounted(async () => {
 onUnmounted(() => window.removeEventListener('scroll', onScroll))
 
 // ─── Modal demande démo ───────────────────────────────────────────────────────
-const showModal  = ref(false)
-const submitted  = ref(false)
-const submitting = ref(false)
-const formError  = ref('')
+const showModal      = ref(false)
+const submitted      = ref(false)
+const submitting     = ref(false)
+const formError      = ref('')
+const emailError     = ref('')
+const submittedEmail = ref('')
 
 const form = ref({
   prenom: '', nom: '', email: '', telephone: '',
@@ -382,6 +391,8 @@ function openModal(plan = 'pro') {
   form.value.plan_souhaite = plan
   submitted.value = false
   formError.value = ''
+  emailError.value = ''
+  submittedEmail.value = ''
   showModal.value = true
   document.body.style.overflow = 'hidden'
 }
@@ -394,12 +405,16 @@ function closeModal() {
 async function submitDemo() {
   submitting.value = true
   formError.value  = ''
+  emailError.value = ''
   try {
     await publicApi.sendDemoRequest(form.value)
+    submittedEmail.value = form.value.email
     submitted.value = true
   } catch (e: any) {
     const errors = e.response?.data?.errors
-    if (errors) {
+    if (errors?.email) {
+      emailError.value = (errors.email as string[]).join(' ')
+    } else if (errors) {
       formError.value = Object.values(errors).flat().join(' — ')
     } else {
       formError.value = e.response?.data?.message ?? 'Une erreur est survenue.'
