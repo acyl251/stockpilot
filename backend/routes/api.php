@@ -53,7 +53,7 @@ Route::get('/debug-time', function () {
 
 // ─── Public ───────────────────────────────────────────────────────────────────
 Route::get('/scheduler/run', function (\Illuminate\Http\Request $request) {
-    $secret = env('SCHEDULER_SECRET', '');
+    $secret = getenv('SCHEDULER_SECRET') ?: env('SCHEDULER_SECRET', '');
     if (empty($secret) || $request->get('token') !== $secret) {
         return response()->json([
             'error' => 'Unauthorized',
@@ -63,7 +63,6 @@ Route::get('/scheduler/run', function (\Illuminate\Http\Request $request) {
     \Artisan::call('schedule:run');
     return response()->json([
         'success' => true,
-        'output'  => \Artisan::output(),
         'time'    => now()->toDateTimeString(),
     ]);
 });
