@@ -60,10 +60,10 @@
       <div class="flex gap-3">
         <input v-model="search" @input="debouncedFetch"
           placeholder="Rechercher un produit par nom ou référence…"
-          class="flex-1 border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+          class="flex-1 border border-slate-300 rounded-lg px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-gold" />
         <input v-model="barcode" @keyup.enter="scanBarcode" ref="barcodeInput"
           placeholder="📷 Code-barres / réf. (Entrée)"
-          class="w-64 border border-slate-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
+          class="w-64 border border-slate-300 rounded-lg px-4 py-3.5 text-base focus:outline-none focus:ring-2 focus:ring-gold" />
       </div>
       <p v-if="scanMsg" class="text-xs" :class="scanError ? 'text-red-500' : 'text-emerald-600'">{{ scanMsg }}</p>
 
@@ -74,16 +74,16 @@
 
       <div v-else class="space-y-4">
         <!-- Plats -->
-        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
           <button v-for="p in products" :key="p.id"
             @click="addToCart(p)"
             :disabled="availableStock(p) <= 0"
-            class="card p-3 text-left hover:ring-2 hover:ring-gold transition disabled:opacity-40 disabled:cursor-not-allowed flex flex-col">
-            <p class="font-semibold text-navy text-sm leading-snug line-clamp-2">{{ p.nom }}</p>
-            <p class="text-slate-400 text-xs font-mono mt-0.5">{{ p.reference }}</p>
+            class="card p-4 text-left active:ring-2 active:ring-gold transition disabled:opacity-40 disabled:cursor-not-allowed flex flex-col min-h-[80px]">
+            <p class="font-semibold text-navy text-base leading-snug line-clamp-2">{{ p.nom }}</p>
+            <p class="text-slate-400 text-sm font-mono mt-0.5">{{ p.reference }}</p>
             <div class="mt-auto pt-2 flex items-center justify-between">
-              <span class="text-gold font-bold text-sm">{{ money(p.prix_vente_ttc) }}</span>
-              <span class="text-xs"
+              <span class="text-gold font-bold text-base">{{ money(p.prix_vente_ttc) }}</span>
+              <span class="text-sm"
                 :class="!isCompose(p) && availableStock(p) <= 0 ? 'text-red-500' : 'text-slate-500'">
                 {{ isCompose(p) ? 'Recette' : `Stock : ${availableStock(p)}` }}
               </span>
@@ -94,14 +94,14 @@
         <!-- Suppléments (restauration) -->
         <template v-if="supplements.length > 0">
           <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider pt-1">Suppléments</p>
-          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
             <button v-for="s in supplements" :key="`supp-${s.id}`"
               @click="addSupplementToCart(s)"
-              class="card p-3 text-left hover:ring-2 hover:ring-amber-400 transition flex flex-col bg-amber-50/40">
-              <p class="font-semibold text-navy text-sm leading-snug line-clamp-2">{{ s.nom }}</p>
+              class="card p-4 text-left active:ring-2 active:ring-amber-400 transition flex flex-col bg-amber-50/40 min-h-[80px]">
+              <p class="font-semibold text-navy text-base leading-snug line-clamp-2">{{ s.nom }}</p>
               <div class="mt-auto pt-2 flex items-center justify-between">
-                <span class="text-amber-600 font-bold text-sm">{{ money(s.prix_vente) }}</span>
-                <span class="text-xs text-slate-400">{{ s.quantite }} {{ s.unite || '' }}</span>
+                <span class="text-amber-600 font-bold text-base">{{ money(s.prix_vente) }}</span>
+                <span class="text-sm text-slate-400">{{ s.quantite }} {{ s.unite || '' }}</span>
               </div>
             </button>
           </div>
@@ -131,14 +131,14 @@
             <p class="text-sm font-medium text-navy truncate">{{ line.nom }}</p>
             <p class="text-xs text-slate-400">{{ money(line.prix_vente_ttc) }} × {{ line.qty }}</p>
           </div>
-          <div class="flex items-center gap-1">
-            <button @click="dec(line)" class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-navy">−</button>
-            <span class="w-6 text-center text-sm">{{ line.qty }}</span>
+          <div class="flex items-center gap-2">
+            <button @click="dec(line)" class="w-11 h-11 rounded-lg bg-slate-100 active:bg-slate-200 text-navy text-lg font-bold flex items-center justify-center">−</button>
+            <span class="w-8 text-center text-sm font-medium">{{ line.qty }}</span>
             <button @click="inc(line)" :disabled="line.qty >= line.stock"
-              class="w-6 h-6 rounded bg-slate-100 hover:bg-slate-200 text-navy disabled:opacity-40">+</button>
+              class="w-11 h-11 rounded-lg bg-slate-100 active:bg-slate-200 text-navy text-lg font-bold flex items-center justify-center disabled:opacity-40">+</button>
           </div>
           <span class="w-20 text-right text-sm font-semibold text-navy">{{ money(line.prix_vente_ttc * line.qty) }}</span>
-          <button @click="removeLine(line)" class="text-slate-300 hover:text-red-500">✕</button>
+          <button @click="removeLine(line)" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 active:text-red-500 text-base">✕</button>
         </div>
       </div>
 
@@ -176,17 +176,17 @@
 
         <div class="grid grid-cols-3 gap-2 pt-1">
           <button @click="mode = 'especes'"
-            :class="['py-2 rounded-lg text-sm font-semibold border',
+            :class="['py-4 rounded-lg text-base font-semibold border',
               mode === 'especes' ? 'bg-navy text-white border-navy' : 'border-slate-300 text-slate-600']">
             Espèces
           </button>
           <button @click="mode = 'carte'"
-            :class="['py-2 rounded-lg text-sm font-semibold border',
+            :class="['py-4 rounded-lg text-base font-semibold border',
               mode === 'carte' ? 'bg-navy text-white border-navy' : 'border-slate-300 text-slate-600']">
             Carte
           </button>
           <button @click="mode = 'credit'"
-            :class="['py-2 rounded-lg text-sm font-semibold border',
+            :class="['py-4 rounded-lg text-base font-semibold border',
               mode === 'credit' ? 'bg-amber-500 text-white border-amber-500' : 'border-slate-300 text-slate-600']">
             Plus tard
           </button>
@@ -247,7 +247,7 @@
         <p v-if="error" class="text-red-600 text-xs">{{ error }}</p>
 
         <button @click="validate" :disabled="!canValidate || submitting"
-          class="btn-primary w-full py-2.5 disabled:opacity-50">
+          class="btn-primary w-full py-4 text-base font-bold disabled:opacity-50">
           {{ submitting ? 'Encaissement…' : mode === 'carte' ? 'Confirmer le paiement carte' : 'Encaisser' }}
         </button>
       </div>
