@@ -52,6 +52,19 @@ Route::get('/debug-time', function () {
 });
 
 // ─── Public ───────────────────────────────────────────────────────────────────
+Route::get('/scheduler/run', function (\Illuminate\Http\Request $request) {
+    $secret = config('app.scheduler_secret');
+    if (! $secret || $request->get('token') !== $secret) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+    \Artisan::call('schedule:run');
+    return response()->json([
+        'success' => true,
+        'output'  => \Artisan::output(),
+        'time'    => now()->toDateTimeString(),
+    ]);
+});
+
 Route::post('/auth/login',         [AuthController::class, 'login']);
 Route::post('/demo-request',       [DemoRequestController::class, 'store']);
 Route::get('/verify-email/{token}', EmailVerificationController::class);
