@@ -27,8 +27,9 @@ function openPrint(html: string) {
   setTimeout(() => { win.print(); win.close() }, 250)
 }
 
+const _fmtNum = new Intl.NumberFormat('fr-TN', { minimumFractionDigits: 3, maximumFractionDigits: 3 })
 function fmt(v: any): string {
-  return Number(v ?? 0).toFixed(3)
+  return _fmtNum.format(Number(v ?? 0))
 }
 
 // ─── Reçu client ─────────────────────────────────────────────────────────────

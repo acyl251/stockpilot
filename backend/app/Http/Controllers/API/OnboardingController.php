@@ -4,10 +4,14 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Composition;
+use App\Models\Fournisseur;
 use App\Models\Organisation;
 use App\Models\Product;
 use App\Models\ProductType;
+use App\Models\Sale;
 use App\Models\TypeAttribute;
+use App\Models\User;
 use App\Services\AIService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +21,94 @@ use Illuminate\Support\Str;
 class OnboardingController extends Controller
 {
     public function __construct(private AIService $aiService) {}
+
+    /** Checklist de démarrage — admin uniquement */
+    public function checklist(): JsonResponse
+    {
+        $user = app('current_user');
+        if (! in_array($user->role, ['admin', 'super_admin'])) {
+            return response()->json(['message' => 'Accès réservé aux administrateurs.'], 403);
+        }
+
+        $org           = $user->organisation;
+        $isRestauration = $org->secteur === Organisation::SECTEUR_RESTAURATION;
+
+        $productCount     = Product::count();
+        $composeCount     = Product::where('type', Product::TYPE_COMPOSE)->count();
+        $compositionCount = Composition::count();
+        $saleCount        = Sale::count();
+        $fournisseurCount = Fournisseur::count();
+        $hasCollaborateur = User::where('organisation_id', app('current_organisation_id'))
+            ->where('id', '!=', $user->id)
+            ->whereNull('deleted_at')
+            ->exists();
+
+        $steps = [
+            [
+                'id'        => 'configuration',
+                'label'     => 'Configurez votre restaurant',
+                'completed' => ! empty($org->nom)
+                    && ! empty($org->secteur)
+                    && ! empty($org->telephone)
+                    && ! empty($org->adresse),
+                'link'      => '/app/configuration',
+                'visible'   => true,
+            ],
+            [
+                'id'        => 'produits',
+                'label'     => 'Ajoutez vos premiers produits',
+                'completed' => $productCount > 0,
+                'link'      => '/app/products',
+                'visible'   => true,
+            ],
+            [
+                'id'        => 'menu',
+                'label'     => 'Créez votre menu',
+                'completed' => $composeCount > 0,
+                'link'      => '/app/menu',
+                'visible'   => $isRestauration,
+            ],
+            [
+                'id'        => 'recettes',
+                'label'     => 'Configurez vos recettes',
+                'completed' => $compositionCount > 0,
+                'link'      => '/app/menu',
+                'visible'   => $isRestauration,
+            ],
+            [
+                'id'        => 'vente',
+                'label'     => 'Faites votre première vente',
+                'completed' => $saleCount > 0,
+                'link'      => '/app/caisse',
+                'visible'   => true,
+            ],
+            [
+                'id'        => 'fournisseur',
+                'label'     => 'Ajoutez un fournisseur',
+                'completed' => $fournisseurCount > 0,
+                'link'      => '/app/fournisseurs',
+                'visible'   => true,
+            ],
+            [
+                'id'        => 'collaborateur',
+                'label'     => 'Invitez un collaborateur',
+                'completed' => $hasCollaborateur,
+                'link'      => '/app/utilisateurs',
+                'visible'   => true,
+            ],
+        ];
+
+        $visibleSteps   = array_values(array_filter($steps, fn($s) => $s['visible']));
+        $completedCount = count(array_filter($visibleSteps, fn($s) => $s['completed']));
+        $totalCount     = count($visibleSteps);
+
+        return response()->json([
+            'steps'           => $visibleSteps,
+            'completed_count' => $completedCount,
+            'total_count'     => $totalCount,
+            'all_completed'   => $completedCount === $totalCount,
+        ]);
+    }
 
     /** Étape 2 — suggestions de types de produits */
     public function suggest(Request $request): JsonResponse

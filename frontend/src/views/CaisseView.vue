@@ -114,10 +114,10 @@
             class="border border-slate-300 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold">
             <option :value="null">Sans remise</option>
             <option value="pourcentage">Remise %</option>
-            <option value="montant">Remise TND</option>
+            <option value="montant">Remise DT</option>
           </select>
           <input v-if="remiseType" v-model.number="remiseValeur" type="number" min="0" step="0.001"
-            :placeholder="remiseType === 'pourcentage' ? '%' : 'TND'"
+            :placeholder="remiseType === 'pourcentage' ? '%' : 'DT'"
             class="flex-1 w-20 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
         </div>
         <div v-if="remiseMontant > 0" class="flex justify-between text-sm text-red-500">
@@ -303,6 +303,7 @@ import { ref, computed, onMounted } from 'vue'
 import { productsApi, salesApi, clientsApi, supplementsApi, pointsDeVenteApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { printReceipt } from '@/utils/print'
+import { formatPrice } from '@/utils/currency'
 
 interface Product {
   id: number; nom: string; reference: string
@@ -630,7 +631,7 @@ async function _doCreateSale(payload: any) {
 }
 
 function money(v: number | string | null | undefined): string {
-  return Number(v ?? 0).toFixed(3) + ' TND'
+  return formatPrice(v)
 }
 function formatDate(d: string): string {
   return new Date(d).toLocaleString('fr-FR')

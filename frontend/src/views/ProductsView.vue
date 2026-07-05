@@ -66,7 +66,7 @@
               :class="p.en_rupture ? 'text-red-600' : p.en_alerte ? 'text-amber-600' : 'text-slate-800'">
               {{ p.quantite }} {{ p.unite_mesure }}
             </td>
-            <td class="px-4 py-3 text-right text-slate-600">{{ p.prix_achat_ht.toFixed(3) }} TND</td>
+            <td class="px-4 py-3 text-right text-slate-600">{{ formatPrice(p.prix_achat_ht) }}</td>
             <td class="px-4 py-3 text-center">
               <div class="flex flex-col items-center gap-1">
                 <span :class="['badge-stock px-2 py-0.5 rounded-full text-xs font-semibold',
@@ -122,6 +122,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useProductsStore } from '@/stores/products'
+import { formatPrice } from '@/utils/currency'
 import { useAuthStore } from '@/stores/auth'
 import ProductFormModal from '@/components/ProductFormModal.vue'
 

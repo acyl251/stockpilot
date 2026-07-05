@@ -67,7 +67,7 @@
               <p v-if="touched.seuil_alerte && errors.seuil_alerte" class="text-red-500 text-xs mt-1">{{ errors.seuil_alerte }}</p>
             </div>
             <div v-if="!(auth.isRestauration && form.type === 'compose')">
-              <label class="form-label">{{ auth.isRestauration ? 'Prix achat TTC (TND)' : 'Prix achat HT (TND)' }} *</label>
+              <label class="form-label">{{ auth.isRestauration ? 'Prix achat TTC (DT)' : 'Prix achat HT (DT)' }} *</label>
               <input v-model.number="form.prix_achat_ht" @blur="touched.prix_achat_ht = true" type="number" min="0" step="0.001"
                 :class="['form-input', touched.prix_achat_ht && errors.prix_achat_ht ? 'input-error' : '']" />
               <p v-if="touched.prix_achat_ht && errors.prix_achat_ht" class="text-red-500 text-xs mt-1">{{ errors.prix_achat_ht }}</p>
@@ -82,7 +82,7 @@
             </div>
             <div>
               <label class="form-label">
-                {{ auth.isRestauration ? 'Prix vente TTC (TND)' : 'Prix vente HT (TND)' }}
+                {{ auth.isRestauration ? 'Prix vente TTC (DT)' : 'Prix vente HT (DT)' }}
                 <span v-if="!prixVenteOptionnel"> *</span>
               </label>
               <input v-model.number="form.prix_vente_ht" @blur="touched.prix_vente_ht = true" type="number" min="0" step="0.001"
@@ -106,7 +106,7 @@
                   <template v-else-if="marginZero">⚠ Marge nulle</template>
                   <template v-else>Marge bénéficiaire</template>
                 </span>
-                <span class="font-semibold">{{ marginValue.toFixed(3) }} TND ({{ marginPct.toFixed(1) }} %)</span>
+                <span class="font-semibold">{{ formatPrice(marginValue) }} ({{ marginPct.toFixed(1) }} %)</span>
               </div>
             </div>
 
@@ -260,6 +260,7 @@ import { useProductsStore } from '@/stores/products'
 import { useAuthStore } from '@/stores/auth'
 import { productsApi, compositionApi } from '@/services/api'
 import { getConversionFactor } from '@/utils/unitConversion'
+import { formatPrice } from '@/utils/currency'
 
 const props = defineProps<{ product?: any; defaultType?: string }>()
 const emit  = defineEmits(['close', 'saved'])

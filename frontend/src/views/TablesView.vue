@@ -383,6 +383,7 @@ import { ref, computed, onMounted } from 'vue'
 import { tablesApi, ordersApi, productsApi, supplementsApi, clientsApi, salesApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { printReceipt, printKitchenTicket } from '@/utils/print'
+import { formatPrice } from '@/utils/currency'
 
 const auth = useAuthStore()
 
@@ -456,7 +457,7 @@ const existingTotal = computed(() => existingOrders.value.reduce((s, o) => s + o
 const payRendu = computed(() => (payMontantRecu.value || 0) - existingTotal.value)
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function money(v: number) { return (v ?? 0).toFixed(3) + ' DT' }
+function money(v: number) { return formatPrice(v) }
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString('fr-TN', { hour: '2-digit', minute: '2-digit' })
 }

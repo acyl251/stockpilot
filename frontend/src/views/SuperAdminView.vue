@@ -562,6 +562,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { superAdminApi, usersApi } from '@/services/api'
+import { formatPrice } from '@/utils/currency'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -820,7 +821,7 @@ function planBarWidth(actifs: number): string {
 }
 
 function formatCurrency(v: number) {
-  return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(v ?? 0)
+  return formatPrice(v)
 }
 
 function formatDate(d: string | number) {

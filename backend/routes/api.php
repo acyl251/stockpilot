@@ -59,7 +59,8 @@ Route::middleware('auth.tenant')->group(function () {
     Route::get('/dashboard/forecast/{product}', [DashboardController::class, 'forecast']);
     Route::get('/dashboard/restaurant',         [DashboardController::class, 'restaurant']);
 
-    // Onboarding (AI-assisted setup)
+    // Onboarding (AI-assisted setup + checklist)
+    Route::get('/onboarding/checklist',         [OnboardingController::class, 'checklist']);
     Route::post('/onboarding/suggest',          [OnboardingController::class, 'suggest']);
     Route::post('/onboarding/suggest-products', [OnboardingController::class, 'suggestProducts']);
     Route::post('/onboarding/confirm',          [OnboardingController::class, 'confirm']);

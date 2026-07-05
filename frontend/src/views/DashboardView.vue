@@ -1,5 +1,8 @@
 <template>
   <div class="space-y-6">
+    <!-- Checklist de démarrage -->
+    <ChecklistOnboarding ref="checklist" />
+
     <!-- Welcome banner — catalog pre-filled by AI at org creation -->
     <div v-if="showWelcome" class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-navy to-navy-dark text-white p-6 shadow-lg">
       <div class="absolute -right-6 -top-6 w-32 h-32 bg-gold/10 rounded-full blur-2xl"></div>
@@ -322,16 +325,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { formatPrice } from '@/utils/currency'
 import { useAuthStore } from '@/stores/auth'
 import { useAlertsStore } from '@/stores/alerts'
 import { dashboardApi, planApi } from '@/services/api'
 
 import KpiCard from '@/components/KpiCard.vue'
+import ChecklistOnboarding from '@/components/ChecklistOnboarding.vue'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
-const auth   = useAuthStore()
-const alerts = useAlertsStore()
+const auth      = useAuthStore()
+const alerts    = useAlertsStore()
+const checklist = ref<InstanceType<typeof ChecklistOnboarding> | null>(null)
 
 const kpis         = ref<any>({})
 const caisse       = ref<any>({ ca_jour: 0, nb_jour: 0, ca_mois_ttc: 0, nb_mois: 0 })
@@ -388,7 +394,7 @@ function caBarHeight(val: number): string {
 }
 
 function formatCurrency(v: number) {
-  return new Intl.NumberFormat('fr-TN', { style: 'currency', currency: 'TND' }).format(v ?? 0)
+  return formatPrice(v)
 }
 
 function formatDate(d: string) {

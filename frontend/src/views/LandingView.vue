@@ -111,7 +111,7 @@
       <!-- Floating cards parallax -->
       <div class="float-card card-a" :style="{ transform: `translateY(${parallax * 0.15}px) rotate(-6deg)` }">
         <div class="fc-label">CA ce mois</div>
-        <div class="fc-value">47 832 TND</div>
+        <div class="fc-value">47 832 DT</div>
         <div class="fc-trend">↑ +12%</div>
       </div>
       <div class="float-card card-b" :style="{ transform: `translateY(${parallax * 0.25}px) rotate(5deg)` }">
@@ -175,7 +175,7 @@
             <h3>Tableau de bord temps réel</h3>
             <p>KPIs en direct : CA mensuel, valeur du stock, produits en rupture, mouvements du jour. Graphiques sur 7 jours.</p>
             <div class="feat-visual">
-              <div class="mini-kpi"><span>47 832</span><label>CA TND</label></div>
+              <div class="mini-kpi"><span>47 832</span><label>CA DT</label></div>
               <div class="mini-kpi red"><span>7</span><label>Ruptures</label></div>
               <div class="mini-kpi green"><span>284</span><label>Actifs</label></div>
             </div>

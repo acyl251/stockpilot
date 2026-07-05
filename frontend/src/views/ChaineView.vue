@@ -311,6 +311,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { chaineApi } from '@/services/api'
+import { formatPrice } from '@/utils/currency'
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface CaPoint {
@@ -393,7 +394,7 @@ function platBarWidth(v: number): number {
 
 // ── Formatters ─────────────────────────────────────────────────────────────────
 function money(v: number | null | undefined): string {
-  return Number(v ?? 0).toFixed(3) + ' DT'
+  return formatPrice(v)
 }
 function formatDate(d: string): string {
   const dt = new Date(d)

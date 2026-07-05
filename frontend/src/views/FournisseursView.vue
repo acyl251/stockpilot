@@ -246,7 +246,7 @@
             </div>
           </div>
           <div v-if="totalEstime > 0" class="text-right text-sm font-semibold text-navy mt-2">
-            Total estimé : {{ totalEstime.toFixed(3) }} DT
+            Total estimé : {{ formatPrice(totalEstime) }}
           </div>
         </div>
         <p v-if="cError" class="text-red-500 text-xs">{{ cError }}</p>
@@ -369,6 +369,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { fournisseursApi, commandesFournisseurApi, productsApi } from '@/services/api'
+import { formatPrice } from '@/utils/currency'
 
 interface Fournisseur { id: number; nom: string; telephone?: string; email?: string; adresse?: string; note?: string; active: boolean }
 interface CommandeItem { id: number; product_id: number; quantite: number; prix_unitaire?: number; unite: string; product?: any }

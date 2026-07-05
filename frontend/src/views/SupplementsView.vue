@@ -148,6 +148,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supplementsApi, productsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { getConversionFactor } from '@/utils/unitConversion'
+import { formatPrice } from '@/utils/currency'
 
 interface Ingredient { id: number; nom: string; unite_mesure: string; prix_achat_ht: number }
 interface Supplement {
@@ -281,7 +282,7 @@ function formuleCout(s: Supplement): string {
 }
 
 function money(v: number | null | undefined): string {
-  return Number(v ?? 0).toFixed(3) + ' TND'
+  return formatPrice(v)
 }
 
 onMounted(load)

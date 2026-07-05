@@ -163,6 +163,7 @@ import { ref, onMounted } from 'vue'
 import { salesApi, pointsDeVenteApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { printReceipt } from '@/utils/print'
+import { formatPrice } from '@/utils/currency'
 
 const auth = useAuthStore()
 const orgName = auth.user?.organisation?.nom ?? 'StockPilot'
@@ -264,7 +265,7 @@ async function downloadInvoice(s: any) {
 }
 
 function money(v: number | string): string {
-  return Number(v).toFixed(3) + ' TND'
+  return formatPrice(v)
 }
 function formatDate(d: string): string {
   return new Date(d).toLocaleString('fr-FR')

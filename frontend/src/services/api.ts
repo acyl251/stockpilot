@@ -122,6 +122,7 @@ export const alertsApi = {
 
 // ─── Onboarding ───────────────────────────────────────────────────────────────
 export const onboardingApi = {
+  checklist:       ()                                         => api.get('/onboarding/checklist'),
   suggest:         (secteur: string)                          => api.post('/onboarding/suggest', { secteur }),
   suggestProducts: (secteur: string)                          => api.post('/onboarding/suggest-products', { secteur }),
   confirm:         (types: object[], products: object[] = []) => api.post('/onboarding/confirm', { types, products }),

@@ -114,6 +114,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { publicApi } from '@/services/api'
+import { formatPrice } from '@/utils/currency'
 
 interface Plat {
   id: number
@@ -141,7 +142,7 @@ const filteredCategories = computed(() =>
 )
 
 function money(v: number) {
-  return Number(v ?? 0).toFixed(3) + ' DT'
+  return formatPrice(v)
 }
 
 onMounted(async () => {

@@ -150,6 +150,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { clientsApi } from '@/services/api'
+import { formatPrice } from '@/utils/currency'
 
 const clients = ref<any[]>([])
 const loading = ref(false)
@@ -243,7 +244,7 @@ async function saveClient() {
 }
 
 function money(v: number | string): string {
-  return Number(v ?? 0).toFixed(3) + ' TND'
+  return formatPrice(v)
 }
 function formatDate(d: string): string {
   return new Date(d).toLocaleString('fr-FR')

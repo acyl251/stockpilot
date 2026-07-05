@@ -52,19 +52,19 @@
           </div>
           <div>
             <p class="text-slate-500">Prix achat HT</p>
-            <p class="font-semibold text-navy mt-0.5">{{ product.prix_achat_ht.toFixed(3) }} TND</p>
+            <p class="font-semibold text-navy mt-0.5">{{ formatPrice(product.prix_achat_ht) }}</p>
           </div>
           <div>
             <p class="text-slate-500">Prix achat TTC (TVA {{ product.taux_tva }}%)</p>
-            <p class="font-semibold text-navy mt-0.5">{{ product.prix_achat_ttc.toFixed(3) }} TND</p>
+            <p class="font-semibold text-navy mt-0.5">{{ formatPrice(product.prix_achat_ttc) }}</p>
           </div>
           <div>
             <p class="text-slate-500">Prix vente HT</p>
-            <p class="font-semibold text-navy mt-0.5">{{ product.prix_vente_ht.toFixed(3) }} TND</p>
+            <p class="font-semibold text-navy mt-0.5">{{ formatPrice(product.prix_vente_ht) }}</p>
           </div>
           <div>
             <p class="text-slate-500">Prix vente TTC</p>
-            <p class="font-semibold text-navy mt-0.5">{{ product.prix_vente_ttc.toFixed(3) }} TND</p>
+            <p class="font-semibold text-navy mt-0.5">{{ formatPrice(product.prix_vente_ttc) }}</p>
           </div>
         </div>
 
@@ -173,6 +173,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { formatPrice } from '@/utils/currency'
 import { useAuthStore } from '@/stores/auth'
 import { useProductsStore } from '@/stores/products'
 import { productsApi, dashboardApi, movementsApi } from '@/services/api'

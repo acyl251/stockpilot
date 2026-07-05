@@ -151,6 +151,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { productsApi, compositionApi } from '@/services/api'
+import { formatPrice } from '@/utils/currency'
 import { useProductsStore } from '@/stores/products'
 import { useAuthStore } from '@/stores/auth'
 import ProductFormModal from '@/components/ProductFormModal.vue'
@@ -270,7 +271,7 @@ async function onSaved() {
 }
 
 function money(v: number | string | null | undefined): string {
-  return Number(v ?? 0).toFixed(3) + ' TND'
+  return formatPrice(v)
 }
 
 onMounted(async () => {

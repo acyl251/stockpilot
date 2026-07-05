@@ -101,6 +101,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { consommationApi } from '@/services/api'
+import { formatPrice } from '@/utils/currency'
 
 interface Row { nom: string; unite: string; consomme: number; cout_total: number }
 
@@ -167,7 +168,7 @@ async function exportCsv() {
 
 const maxCout = computed(() => Math.max(...rows.value.map(r => r.cout_total), 1))
 function barPct(val: number) { return `${Math.round((val / maxCout.value) * 100)}%` }
-function money(v: number)    { return Number(v ?? 0).toFixed(3) + ' DT' }
+function money(v: number)    { return formatPrice(v) }
 
 onMounted(fetch)
 </script>
