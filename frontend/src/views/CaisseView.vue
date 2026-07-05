@@ -1,5 +1,46 @@
 <template>
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 h-full">
+  <div class="flex flex-col gap-3 h-full">
+
+    <!-- ── Bannière réseau ────────────────────────────────────────────────── -->
+    <Transition name="net-banner">
+      <div v-if="!isOnline"
+        class="flex items-start gap-3 bg-red-600 text-white rounded-xl px-4 py-3 text-sm shadow-md">
+        <span class="text-base mt-0.5 flex-shrink-0">🔴</span>
+        <div>
+          <p class="font-semibold">Connexion internet perdue</p>
+          <p class="text-red-100 text-xs mt-0.5">Ne pas ressaisir la commande. La vente sera envoyée automatiquement dès le retour de la connexion.</p>
+        </div>
+      </div>
+      <div v-else-if="justReconnected"
+        class="flex items-center gap-3 bg-emerald-500 text-white rounded-xl px-4 py-3 text-sm shadow-md">
+        <span class="text-base flex-shrink-0">✅</span>
+        <p class="font-semibold">Connexion rétablie</p>
+      </div>
+    </Transition>
+
+    <!-- ── Bannière sync en cours ─────────────────────────────────────────── -->
+    <div v-if="syncing"
+      class="flex items-center gap-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-xl px-4 py-3 text-sm">
+      <svg class="w-4 h-4 animate-spin flex-shrink-0" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+      </svg>
+      <span>Synchronisation en cours… {{ syncCurrent }} / {{ syncTotal }} vente{{ syncTotal > 1 ? 's' : '' }}</span>
+    </div>
+
+    <!-- ── Alerte ventes anciennes (> 24h) ───────────────────────────────── -->
+    <div v-if="staleWarning"
+      class="flex items-start gap-3 bg-amber-50 border border-amber-300 text-amber-800 rounded-xl px-4 py-3 text-sm">
+      <span class="text-base flex-shrink-0">⚠️</span>
+      <div>
+        <p class="font-semibold">Vente(s) en attente depuis plus de 24h</p>
+        <p class="text-xs mt-0.5">Vérifiez manuellement que ces ventes n'ont pas déjà été enregistrées avant de réessayer.</p>
+      </div>
+      <button @click="staleWarning = false" class="ml-auto text-amber-500 hover:text-amber-700 text-lg leading-none">×</button>
+    </div>
+
+    <!-- ── Grille principale ──────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 flex-1 min-h-0">
     <!-- ── Catalogue (sélection produits) ─────────────────────────────── -->
     <div class="lg:col-span-2 space-y-4">
 
@@ -71,7 +112,12 @@
     <!-- ── Panier + paiement ──────────────────────────────────────────── -->
     <div class="card p-0 flex flex-col h-full sticky top-0">
       <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-        <h2 class="font-bold text-navy">Panier</h2>
+        <div class="flex items-center gap-2">
+          <h2 class="font-bold text-navy">Panier</h2>
+          <span v-if="!isOnline" class="text-xs text-red-500 font-medium">🔴 Hors ligne</span>
+          <span v-else-if="pendingSalesCount > 0" class="text-xs text-amber-600 font-medium">🟡 {{ pendingSalesCount }} en attente</span>
+          <span v-else class="text-xs text-emerald-500">🟢</span>
+        </div>
         <button v-if="cart.length" @click="cart = []"
           class="text-xs text-red-500 hover:text-red-700">Vider</button>
       </div>
@@ -247,6 +293,27 @@
       </div>
     </div>
 
+    <!-- ── Modal vente en attente (hors ligne) ─────────────────────────── -->
+    <div v-if="showPendingModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm p-6 space-y-4">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">📶</span>
+          <div>
+            <h3 class="font-bold text-navy">Vente mise en attente</h3>
+            <p class="text-xs text-slate-500 mt-0.5">{{ pendingSalesCount }} vente{{ pendingSalesCount > 1 ? 's' : '' }} en attente</p>
+          </div>
+        </div>
+        <p class="text-sm text-slate-600">La connexion est temporairement perdue. Votre vente a été sauvegardée et sera envoyée automatiquement dès le retour de la connexion.</p>
+        <div class="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-700">
+          <span>⚠</span>
+          <span>Ne pas ressaisir cette vente</span>
+        </div>
+        <button @click="showPendingModal = false" class="btn-primary w-full py-2.5">
+          OK — J'attends
+        </button>
+      </div>
+    </div>
+
     <!-- ── Reçu (modal imprimable) ────────────────────────────────────── -->
     <div v-if="receipt" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-lg w-full max-w-sm max-h-[90vh] overflow-y-auto">
@@ -295,11 +362,13 @@
         </div>
       </div>
     </div>
-  </div>
+
+    </div><!-- fin grille principale -->
+  </div><!-- fin wrapper -->
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { productsApi, salesApi, clientsApi, supplementsApi, pointsDeVenteApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { printReceipt } from '@/utils/print'
@@ -322,8 +391,106 @@ interface CartLine {
 }
 interface Client { id: number; nom: string; telephone?: string; solde?: number }
 
-const auth = useAuthStore()
+const auth    = useAuthStore()
 const orgName = computed(() => auth.user?.organisation?.nom ?? 'StockPilot')
+
+// ── Gestion réseau ────────────────────────────────────────────────────────────
+const isOnline        = ref(navigator.onLine)
+const justReconnected = ref(false)
+const showPendingModal = ref(false)
+const syncing          = ref(false)
+const syncCurrent      = ref(0)
+const syncTotal        = ref(0)
+const staleWarning     = ref(false)
+
+const pendingSalesKey = computed(() =>
+  `pending_sales_${auth.user?.organisation?.id ?? 0}`
+)
+const pendingSalesCount = computed(() => {
+  try {
+    return JSON.parse(localStorage.getItem(pendingSalesKey.value) || '[]').length
+  } catch { return 0 }
+})
+
+function isOfflineError(e: any): boolean {
+  return !navigator.onLine
+    || e?.code === 'ERR_NETWORK'
+    || e?.message === 'Network Error'
+    || e?.code === 'ECONNABORTED'
+}
+
+function savePendingSale(payload: any) {
+  const key = pendingSalesKey.value
+  const list: any[] = JSON.parse(localStorage.getItem(key) || '[]')
+  if (list.length >= 10) {
+    // Max 10 : supprimer la plus ancienne
+    list.shift()
+  }
+  list.push({
+    data:      payload,
+    timestamp: new Date().toISOString(),
+    id:        crypto.randomUUID(),
+  })
+  localStorage.setItem(key, JSON.stringify(list))
+}
+
+async function retryPendingSales() {
+  const key = pendingSalesKey.value
+  const list: any[] = JSON.parse(localStorage.getItem(key) || '[]')
+  if (list.length === 0) return
+
+  // Vérifier si certaines ventes ont plus de 24h
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000
+  if (list.some((s) => new Date(s.timestamp).getTime() < oneDayAgo)) {
+    staleWarning.value = true
+  }
+
+  syncing.value     = true
+  syncTotal.value   = list.length
+  syncCurrent.value = 0
+
+  const remaining: any[] = []
+  for (const pending of list) {
+    try {
+      await salesApi.create(pending.data)
+      syncCurrent.value++
+      // Si c'était la vente du panier courant : vider le panier
+      if (cart.value.length > 0) {
+        cart.value        = []
+        montantPaye.value = null
+        referenceCarte.value = ''
+        remiseType.value  = null
+        remiseValeur.value = null
+        mode.value        = 'especes'
+        clearClient()
+        clientSearch.value    = ''
+        clientTelephone.value = ''
+        await fetchProducts()
+      }
+    } catch {
+      remaining.push(pending)
+      // Réessayer dans 30s
+      setTimeout(retryPendingSales, 30_000)
+      break
+    }
+  }
+
+  localStorage.setItem(key, JSON.stringify(remaining))
+  syncing.value = false
+}
+
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null
+function handleOnline() {
+  isOnline.value    = true
+  justReconnected.value = true
+  reconnectTimer = setTimeout(() => { justReconnected.value = false }, 3000)
+  retryPendingSales()
+}
+function handleOffline() {
+  isOnline.value = false
+  justReconnected.value = false
+  if (reconnectTimer) clearTimeout(reconnectTimer)
+}
 
 // PDV de vente — résolution pour admin sans PDV assigné
 interface Pdv { id: number; nom: string; type: string }
@@ -623,8 +790,14 @@ async function _doCreateSale(payload: any) {
     clientTelephone.value = ''
     await fetchProducts()
   } catch (e: any) {
-    const firstError = (Object.values(e.response?.data?.errors ?? {})[0] as string[] | undefined)?.[0]
-    error.value = e.response?.data?.message || firstError || 'Échec de l\'encaissement.'
+    if (isOfflineError(e)) {
+      savePendingSale(payload)
+      showPendingModal.value = true
+      // Ne PAS vider le panier ni afficher d'erreur
+    } else {
+      const firstError = (Object.values(e.response?.data?.errors ?? {})[0] as string[] | undefined)?.[0]
+      error.value = e.response?.data?.message || firstError || 'Échec de l\'encaissement.'
+    }
   } finally {
     submitting.value = false
   }
@@ -647,6 +820,14 @@ function doPrint() {
 }
 
 onMounted(async () => {
+  window.addEventListener('online',  handleOnline)
+  window.addEventListener('offline', handleOffline)
+
+  // Si des ventes en attente existent et qu'on est en ligne → retry immédiat
+  if (navigator.onLine && pendingSalesCount.value > 0) {
+    retryPendingSales()
+  }
+
   // Charger PDVs en parallèle des produits pour tout admin sans PDV assigné
   const tasks: Promise<any>[] = [fetchProducts()]
 
@@ -662,4 +843,22 @@ onMounted(async () => {
 
   await Promise.all(tasks)
 })
+
+onUnmounted(() => {
+  window.removeEventListener('online',  handleOnline)
+  window.removeEventListener('offline', handleOffline)
+  if (reconnectTimer) clearTimeout(reconnectTimer)
+})
 </script>
+
+<style scoped>
+.net-banner-enter-active,
+.net-banner-leave-active {
+  transition: opacity 0.3s, transform 0.3s;
+}
+.net-banner-enter-from,
+.net-banner-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+</style>
