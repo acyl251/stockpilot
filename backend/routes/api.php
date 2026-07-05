@@ -27,6 +27,7 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\PointDeVenteController;
 use App\Http\Controllers\API\TransfertController;
 use App\Http\Controllers\API\ChaineController;
+use App\Http\Controllers\API\SearchController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Debug (temporaire) ───────────────────────────────────────────────────────
@@ -53,6 +54,9 @@ Route::middleware('auth.tenant')->group(function () {
         Route::post('refresh', [AuthController::class, 'refresh']);
         Route::get('me',       [AuthController::class, 'me']);
     });
+
+    // Recherche globale
+    Route::get('/search', SearchController::class);
 
     // Dashboard
     Route::get('/dashboard',                    [DashboardController::class, 'index']);

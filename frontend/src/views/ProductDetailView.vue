@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { formatPrice } from '@/utils/currency'
 import { useAuthStore } from '@/stores/auth'
@@ -226,14 +226,18 @@ async function onSaved() {
   product.value = data
 }
 
-onMounted(async () => {
+async function loadProduct(id: number | string) {
   const [prodRes, movRes] = await Promise.all([
-    productsApi.get(Number(route.params.id)),
-    movementsApi.list({ product_id: route.params.id, per_page: 10 }),
+    productsApi.get(Number(id)),
+    movementsApi.list({ product_id: id, per_page: 10 }),
     store.fetchCategories(),
     store.fetchTypes(),
   ])
   product.value         = prodRes.data
   recentMovements.value = movRes.data.data ?? []
-})
+}
+
+watch(() => route.params.id, (newId) => {
+  if (newId) loadProduct(Array.isArray(newId) ? newId[0] : newId)
+}, { immediate: true })
 </script>

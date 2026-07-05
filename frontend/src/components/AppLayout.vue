@@ -28,6 +28,9 @@
       </div>
     </div>
 
+    <!-- Recherche globale (Ctrl+K) -->
+    <GlobalSearch ref="globalSearch" />
+
     <!-- Sidebar -->
     <AppSidebar />
 
@@ -37,6 +40,18 @@
       <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <h1 class="text-lg font-semibold text-navy">{{ pageTitle }}</h1>
         <div class="flex items-center gap-4">
+
+          <!-- Bouton recherche globale -->
+          <button @click="globalSearch?.openSearch()"
+            class="hidden sm:flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
+            </svg>
+            <span>Rechercher…</span>
+            <kbd class="text-xs border border-slate-200 rounded px-1 py-0.5 leading-none">Ctrl+K</kbd>
+          </button>
+
           <!-- Alert badge -->
           <RouterLink to="/alerts" class="relative">
             <span class="text-slate-500 hover:text-navy transition-colors">
@@ -73,18 +88,27 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAlertsStore } from '@/stores/alerts'
 import { useLimitStore } from '@/stores/limit'
 import AppSidebar from './AppSidebar.vue'
+import GlobalSearch from './GlobalSearch.vue'
 
-const auth       = useAuthStore()
-const alerts     = useAlertsStore()
-const limitStore = useLimitStore()
-const route  = useRoute()
-const router = useRouter()
+const auth        = useAuthStore()
+const alerts      = useAlertsStore()
+const limitStore  = useLimitStore()
+const route       = useRoute()
+const router      = useRouter()
+const globalSearch = ref<InstanceType<typeof GlobalSearch> | null>(null)
+
+function handleKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault()
+    globalSearch.value?.openSearch()
+  }
+}
 
 async function handleLogout() {
   await auth.logout()
@@ -107,5 +131,12 @@ const userInitials = computed(() => {
   return u ? `${u.prenom[0]}${u.nom[0]}`.toUpperCase() : '?'
 })
 
-onMounted(() => alerts.fetchStockAlerts())
+onMounted(() => {
+  alerts.fetchStockAlerts()
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>

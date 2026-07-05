@@ -120,6 +120,11 @@ export const alertsApi = {
   commandesSuggerees:  ()               => api.get('/alerts/commandes-suggerees'),
 }
 
+// ─── Recherche globale ────────────────────────────────────────────────────────
+export const searchApi = {
+  search: (q: string, limit = 5) => api.get('/search', { params: { q, limit } }),
+}
+
 // ─── Onboarding ───────────────────────────────────────────────────────────────
 export const onboardingApi = {
   checklist:       ()                                         => api.get('/onboarding/checklist'),
