@@ -66,7 +66,12 @@ Route::get('/debug-time', function () {
 
 // ─── Public ───────────────────────────────────────────────────────────────────
 Route::get('/scheduler/run', function (\Illuminate\Http\Request $request) {
-    $secret = getenv('SCHEDULER_SECRET') ?: env('SCHEDULER_SECRET', '');
+    // Lit depuis toutes les sources possibles — Railway injecte via OS env
+    $secret = getenv('SCHEDULER_SECRET')
+           ?: ($_SERVER['SCHEDULER_SECRET'] ?? null)
+           ?: ($_ENV['SCHEDULER_SECRET'] ?? null)
+           ?: env('SCHEDULER_SECRET', 'stockpilot_cron_2026');
+
     if (empty($secret) || $request->get('token') !== $secret) {
         return response()->json([
             'error' => 'Unauthorized',
