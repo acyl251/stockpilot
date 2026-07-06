@@ -10,7 +10,7 @@ return [
             'transport'  => 'smtp',
             'scheme'     => null,
             'host'       => getenv('MAIL_HOST')     ?: env('MAIL_HOST',     'sandbox.smtp.mailtrap.io'),
-            'port'       => (int) (getenv('MAIL_PORT') ?: env('MAIL_PORT',  2525)),
+            'port'       => (int) (getenv('MAIL_PORT') ?: env('MAIL_PORT',  587)),
             'username'   => getenv('MAIL_USERNAME') ?: env('MAIL_USERNAME', '6fcc80dcfbfe61'),
             'password'   => getenv('MAIL_PASSWORD') ?: env('MAIL_PASSWORD', 'e18e582cc143a0'),
             'encryption' => getenv('MAIL_ENCRYPTION') ?: env('MAIL_ENCRYPTION', 'tls'),
