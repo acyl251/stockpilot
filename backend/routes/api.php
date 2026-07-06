@@ -34,8 +34,11 @@ use Illuminate\Support\Facades\Route;
 // ─── Debug (temporaire) ───────────────────────────────────────────────────────
 Route::get('/test-mail', function () {
     try {
-        \Mail::raw('Test StockPilot via Resend', function ($m) {
-            $m->to('roiassil@yahoo.fr')->subject('Test Resend');
+        \Mail::send([], [], function ($m) {
+            $m->to('roiassil@yahoo.fr')
+              ->from('onboarding@resend.dev', 'StockPilot')
+              ->subject('Test Resend')
+              ->html('<p>Test email StockPilot via Resend</p>');
         });
         return 'Email envoyé avec succès via Resend !';
     } catch (\Exception $e) {
