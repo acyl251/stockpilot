@@ -7,6 +7,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -27,6 +28,7 @@ class WeeklyReport extends Mailable
     {
         $periode = $this->debut->format('d/m') . ' – ' . $this->fin->format('d/m/Y');
         return new Envelope(
+            from: new Address('onboarding@resend.dev', 'StockPilot'),
             subject: "📊 Rapport hebdomadaire StockPilot — {$this->org->nom} ({$periode})",
         );
     }

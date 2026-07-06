@@ -66,10 +66,10 @@ class DemoRequestController extends Controller
         try {
             Mail::to($demo->email)->send(new ConfirmDemoRequest($demo));
         } catch (\Throwable $e) {
-            // Ne pas bloquer la soumission si l'email échoue — logger seulement
-            \Log::warning('Impossible d\'envoyer l\'email de confirmation', [
+            \Log::error('Impossible d\'envoyer l\'email de confirmation', [
                 'demo_id' => $demo->id,
                 'error'   => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
             ]);
         }
 
