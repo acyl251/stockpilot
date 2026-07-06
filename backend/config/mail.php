@@ -2,9 +2,13 @@
 
 return [
 
-    'default' => getenv('MAIL_MAILER') ?: env('MAIL_MAILER', 'smtp'),
+    'default' => getenv('MAIL_MAILER') ?: env('MAIL_MAILER', 'resend'),
 
     'mailers' => [
+
+        'resend' => [
+            'transport' => 'resend',
+        ],
 
         'smtp' => [
             'transport'  => 'smtp',
@@ -29,7 +33,7 @@ return [
     ],
 
     'from' => [
-        'address' => getenv('MAIL_FROM_ADDRESS') ?: env('MAIL_FROM_ADDRESS', 'noreply@stockpilot.tn'),
+        'address' => getenv('MAIL_FROM_ADDRESS') ?: env('MAIL_FROM_ADDRESS', 'onboarding@resend.dev'),
         'name'    => getenv('MAIL_FROM_NAME')    ?: env('MAIL_FROM_NAME',    'StockPilot'),
     ],
 
