@@ -34,10 +34,10 @@ use Illuminate\Support\Facades\Route;
 // ─── Debug (temporaire) ───────────────────────────────────────────────────────
 Route::get('/test-mail', function () {
     try {
-        \Mail::raw('Test StockPilot', function ($m) {
-            $m->to('test@test.tn')->subject('Test Mailtrap');
+        \Mail::raw('Test StockPilot via Resend', function ($m) {
+            $m->to('roiassil@yahoo.fr')->subject('Test Resend');
         });
-        return 'Email envoyé avec succès !';
+        return 'Email envoyé avec succès via Resend !';
     } catch (\Exception $e) {
         return 'Erreur : ' . $e->getMessage();
     }
