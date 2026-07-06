@@ -31,21 +31,6 @@ use App\Http\Controllers\API\SearchController;
 use App\Http\Controllers\EmailVerificationController;
 use Illuminate\Support\Facades\Route;
 
-// ─── Debug (temporaire) ───────────────────────────────────────────────────────
-Route::get('/test-mail', function () {
-    try {
-        \Mail::send([], [], function ($m) {
-            $m->to('roiassil@yahoo.fr')
-              ->from('onboarding@resend.dev', 'StockPilot')
-              ->subject('Test Resend')
-              ->html('<p>Test email StockPilot via Resend</p>');
-        });
-        return 'Email envoyé avec succès via Resend !';
-    } catch (\Exception $e) {
-        return 'Erreur : ' . $e->getMessage();
-    }
-});
-
 
 Route::get('/debug-time', function () {
     return [
