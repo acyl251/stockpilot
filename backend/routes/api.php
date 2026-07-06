@@ -43,18 +43,6 @@ Route::get('/test-mail', function () {
     }
 });
 
-Route::get('/debug-env', function () {
-    return response()->json([
-        'getenv_scheduler'  => getenv('SCHEDULER_SECRET') ?: 'ABSENT',
-        'env_scheduler'     => env('SCHEDULER_SECRET') ?: 'ABSENT',
-        'server_scheduler'  => $_SERVER['SCHEDULER_SECRET'] ?? 'ABSENT',
-        'env_var_scheduler' => $_ENV['SCHEDULER_SECRET'] ?? 'ABSENT',
-        'getenv_mail_user'  => getenv('MAIL_USERNAME') ?: 'ABSENT',
-        'getenv_app_env'    => getenv('APP_ENV') ?: 'ABSENT',
-        'getenv_jwt'        => getenv('JWT_SECRET') ? 'PRESENT' : 'ABSENT',
-        'config_cached'     => file_exists(base_path('bootstrap/cache/config.php')) ? 'OUI' : 'NON',
-    ]);
-});
 
 Route::get('/debug-time', function () {
     return [
