@@ -186,6 +186,7 @@ export const superAdminApi = {
   destroyOrg:         (id: number)                 => api.delete(`/super-admin/organisations/${id}`),
   demoRequests:       ()                           => api.get('/super-admin/demo-requests'),
   updateDemoStatus:   (id: number, statut: string) => api.patch(`/super-admin/demo-requests/${id}`, { statut }),
+  resendDemoEmail:    (id: number)                 => api.post(`/super-admin/demo-requests/${id}/resend-email`),
 }
 
 // ─── Fournisseurs ─────────────────────────────────────────────────────────────

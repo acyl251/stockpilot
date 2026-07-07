@@ -532,10 +532,16 @@
           </div>
 
           <!-- Statut + actions -->
-          <div class="flex items-center gap-2 flex-shrink-0">
+          <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
             <span :class="['text-xs font-bold px-2.5 py-1 rounded-full', statutBadge(d.statut)]">
               {{ statutLabel(d.statut) }}
             </span>
+            <button v-if="d.statut === 'pending_verification'"
+              @click="resendEmail(d)"
+              :disabled="resendingId === d.id"
+              class="text-xs bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg font-medium hover:bg-blue-100 disabled:opacity-50">
+              {{ resendingId === d.id ? 'Envoi…' : 'Renvoyer l\'email' }}
+            </button>
             <button v-if="d.statut === 'en_attente'"
               @click="handleDemo(d, 'traite')"
               class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-lg font-medium hover:bg-emerald-100">
@@ -555,6 +561,14 @@
         </div>
       </div>
     </template><!-- fin onglet demandes -->
+
+    <!-- Toast -->
+    <Transition name="toast">
+      <div v-if="toast"
+        class="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-lg">
+        {{ toast }}
+      </div>
+    </Transition>
 
   </div>
 </template>
@@ -625,6 +639,25 @@ async function switchToUsers() {
 const demos        = ref<any[]>([])
 const demosLoading = ref(false)
 const demoPending  = computed(() => demos.value.filter((d: any) => d.statut === 'en_attente').length)
+const resendingId  = ref<number | null>(null)
+const toast        = ref('')
+
+function showToast(msg: string) {
+  toast.value = msg
+  setTimeout(() => { toast.value = '' }, 4000)
+}
+
+async function resendEmail(d: any) {
+  resendingId.value = d.id
+  try {
+    await superAdminApi.resendDemoEmail(d.id)
+    showToast(`Email de confirmation renvoyé à ${d.email}`)
+  } catch (e: any) {
+    alert(e?.response?.data?.message ?? 'Erreur lors de l\'envoi.')
+  } finally {
+    resendingId.value = null
+  }
+}
 
 async function switchToDemos() {
   activeTab.value = 'demandes'
@@ -854,3 +887,8 @@ onMounted(async () => {
   }
 })
 </script>
+
+<style scoped>
+.toast-enter-active, .toast-leave-active { transition: opacity 0.3s, transform 0.3s; }
+.toast-enter-from, .toast-leave-to       { opacity: 0; transform: translateY(12px); }
+</style>

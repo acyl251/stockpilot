@@ -225,7 +225,8 @@ Route::middleware('auth.tenant')->group(function () {
         Route::delete('/users/{id}',         [SuperAdminController::class, 'destroyUser']);
         Route::patch('/organisations/{id}',  [SuperAdminController::class, 'updateOrganisation']);
         Route::delete('/organisations/{id}', [SuperAdminController::class, 'destroyOrganisation']);
-        Route::get('/demo-requests',        [DemoRequestController::class, 'index']);
-        Route::patch('/demo-requests/{id}', [DemoRequestController::class, 'updateStatus']);
+        Route::get('/demo-requests',                          [DemoRequestController::class, 'index']);
+        Route::patch('/demo-requests/{id}',               [DemoRequestController::class, 'updateStatus']);
+        Route::post('/demo-requests/{id}/resend-email',   [DemoRequestController::class, 'resendEmail']);
     });
 });

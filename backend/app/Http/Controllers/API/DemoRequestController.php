@@ -96,6 +96,34 @@ class DemoRequestController extends Controller
         return response()->json($requests);
     }
 
+    /** POST /super-admin/demo-requests/{id}/resend-email — resend confirmation email */
+    public function resendEmail(int $id): JsonResponse
+    {
+        $demo = DemoRequest::findOrFail($id);
+
+        if ($demo->statut !== 'pending_verification') {
+            return response()->json(['message' => 'Cette demande n\'est pas en attente de vérification.'], 422);
+        }
+
+        // Regenerate token and reset the 48h expiry window
+        $demo->email_token = Str::random(64);
+        $demo->created_at  = now();
+        $demo->save();
+
+        try {
+            Mail::to($demo->email)->send(new ConfirmDemoRequest($demo));
+        } catch (\Throwable $e) {
+            \Log::error('Impossible de renvoyer l\'email de confirmation', [
+                'demo_id' => $demo->id,
+                'error'   => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+            return response()->json(['message' => 'Email non envoyé : ' . $e->getMessage()], 500);
+        }
+
+        return response()->json(['message' => 'Email de confirmation renvoyé.', 'email' => $demo->email]);
+    }
+
     /** PATCH /super-admin/demo-requests/{id} — update status */
     public function updateStatus(Request $request, int $id): JsonResponse
     {
