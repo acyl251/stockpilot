@@ -137,6 +137,15 @@ class DemoRequestController extends Controller
         return response()->json($demo);
     }
 
+    /** DELETE /super-admin/demo-requests/{id} — delete permanently */
+    public function destroy(int $id): JsonResponse
+    {
+        $demo = DemoRequest::findOrFail($id);
+        $demo->delete();
+
+        return response()->json(['message' => 'Demande supprimée']);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
 
     private function isDomainValid(string $domain): bool

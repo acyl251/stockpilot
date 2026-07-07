@@ -187,6 +187,7 @@ export const superAdminApi = {
   demoRequests:       ()                           => api.get('/super-admin/demo-requests'),
   updateDemoStatus:   (id: number, statut: string) => api.patch(`/super-admin/demo-requests/${id}`, { statut }),
   resendDemoEmail:    (id: number)                 => api.post(`/super-admin/demo-requests/${id}/resend-email`),
+  destroyDemo:        (id: number)                 => api.delete(`/super-admin/demo-requests/${id}`),
 }
 
 // ─── Fournisseurs ─────────────────────────────────────────────────────────────

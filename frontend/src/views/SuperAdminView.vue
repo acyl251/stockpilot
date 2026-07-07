@@ -557,6 +557,10 @@
               class="text-xs bg-slate-50 text-slate-500 border border-slate-200 px-3 py-1.5 rounded-lg font-medium hover:bg-slate-100">
               Remettre
             </button>
+            <button @click="deleteDemo(d)"
+              class="text-xs bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg font-medium hover:bg-red-100">
+              Supprimer
+            </button>
           </div>
         </div>
       </div>
@@ -656,6 +660,17 @@ async function resendEmail(d: any) {
     alert(e?.response?.data?.message ?? 'Erreur lors de l\'envoi.')
   } finally {
     resendingId.value = null
+  }
+}
+
+async function deleteDemo(d: any) {
+  if (!confirm('Supprimer définitivement cette demande ?')) return
+  try {
+    await superAdminApi.destroyDemo(d.id)
+    demos.value = demos.value.filter((x: any) => x.id !== d.id)
+    showToast('Demande supprimée')
+  } catch (e: any) {
+    alert(e?.response?.data?.message ?? 'Erreur lors de la suppression.')
   }
 }
 

@@ -228,5 +228,6 @@ Route::middleware('auth.tenant')->group(function () {
         Route::get('/demo-requests',                          [DemoRequestController::class, 'index']);
         Route::patch('/demo-requests/{id}',               [DemoRequestController::class, 'updateStatus']);
         Route::post('/demo-requests/{id}/resend-email',   [DemoRequestController::class, 'resendEmail']);
+        Route::delete('/demo-requests/{id}',              [DemoRequestController::class, 'destroy']);
     });
 });
