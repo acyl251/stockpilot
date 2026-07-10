@@ -532,7 +532,7 @@
           </div>
 
           <!-- Statut + actions -->
-          <div class="flex items-center gap-2 flex-shrink-0 flex-wrap">
+          <div class="flex items-center gap-2 flex-wrap w-full sm:w-auto">
             <span :class="['text-xs font-bold px-2.5 py-1 rounded-full', statutBadge(d.statut)]">
               {{ statutLabel(d.statut) }}
             </span>
