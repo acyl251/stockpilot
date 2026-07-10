@@ -32,6 +32,7 @@ export const useAuthStore = defineStore('auth', () => {
   const hasAI             = computed(() => user.value?.organisation?.plan?.ia_activee ?? false)
   const isAdmin           = computed(() => ['admin', 'super_admin'].includes(user.value?.role ?? ''))
   const isSuperAdmin      = computed(() => user.value?.role === 'super_admin')
+  const secteur           = computed(() => user.value?.organisation?.secteur ?? null)
   const isRestauration    = computed(() => user.value?.organisation?.secteur === 'restauration')
   const pointDeVenteId    = computed(() => user.value?.point_de_vente_id ?? null)
   const pointDeVente      = computed(() => user.value?.point_de_vente ?? null)
@@ -73,5 +74,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, isRestauration, pointDeVenteId, pointDeVente, chaineVisible, isMultiPDV, isRestrictedOperateur, login, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, secteur, isRestauration, pointDeVenteId, pointDeVente, chaineVisible, isMultiPDV, isRestrictedOperateur, login, logout, fetchMe, initPromise }
 })

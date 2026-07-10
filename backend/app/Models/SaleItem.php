@@ -21,6 +21,7 @@ class SaleItem extends BaseModel
         'taux_tva',
         'prix_unitaire_ttc',
         'total_ligne_ttc',
+        'type_prix',
     ];
 
     protected $casts = [

@@ -95,6 +95,14 @@
               </p>
             </div>
 
+            <!-- Prix vente gros (commerce only) -->
+            <div v-if="auth.secteur === 'commerce'">
+              <label class="form-label">Prix vente gros (DT)</label>
+              <input v-model.number="form.prix_vente_gros" type="number" min="0" step="0.001"
+                class="form-input" />
+              <p class="text-slate-400 text-xs mt-1">Optionnel — pour vente en gros (dépôts, distributeurs)</p>
+            </div>
+
             <!-- Live margin indicator — hidden in restauration (food cost used instead) -->
             <div v-if="showMargin && !auth.isRestauration" class="col-span-2">
               <div :class="['rounded-lg px-3 py-2 text-sm flex items-center justify-between border',
@@ -297,6 +305,7 @@ const form = ref<any>(props.product
       prix_achat_ht:   Number(props.product.prix_achat_ht ?? 0),
       taux_tva:        auth.isRestauration ? 0 : Number(props.product.taux_tva ?? 19),
       prix_vente_ht:   Number(props.product.prix_vente_ht ?? 0),
+      prix_vente_gros: Number(props.product.prix_vente_gros ?? 0),
       attributs:       { ...(props.product.attributs ?? {}) },
       type:            props.product.type ?? 'simple',
     }
@@ -305,7 +314,7 @@ const form = ref<any>(props.product
       category_id: '', product_type_id: '',
       seuil_alerte: 0, prix_achat_ht: 0,
       taux_tva: auth.isRestauration ? 0 : 19,
-      prix_vente_ht: 0,
+      prix_vente_ht: 0, prix_vente_gros: 0,
       attributs: {}, type: props.defaultType ?? 'simple',
     })
 

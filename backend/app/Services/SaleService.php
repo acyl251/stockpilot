@@ -109,7 +109,11 @@ class SaleService
                     ]);
                 }
 
-                $puHt   = (float) $product->prix_vente_ht;
+                // Utiliser le prix gros si demandé et disponible
+                $typePrix = $row['type_prix'] ?? 'detail';
+                $puHt   = $typePrix === 'gros' && $product->prix_vente_gros
+                    ? (float) $product->prix_vente_gros
+                    : (float) $product->prix_vente_ht;
                 $tva    = (float) $product->taux_tva;
                 $puTtc  = round($puHt * (1 + $tva / 100), 3);
                 $ligne  = round($puTtc * $quantite, 3);
@@ -126,6 +130,7 @@ class SaleService
                     'taux_tva'            => $tva,
                     'prix_unitaire_ttc'   => $puTtc,
                     'total_ligne_ttc'     => $ligne,
+                    'type_prix'           => $typePrix,
                 ];
             }
 
@@ -195,6 +200,7 @@ class SaleService
                     'taux_tva'            => $line['taux_tva'],
                     'prix_unitaire_ttc'   => $line['prix_unitaire_ttc'],
                     'total_ligne_ttc'     => $line['total_ligne_ttc'],
+                    'type_prix'           => $line['type_prix'] ?? 'detail',
                 ]);
 
                 if ($isSupp) {

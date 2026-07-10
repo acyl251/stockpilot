@@ -50,12 +50,15 @@ export function printReceipt(sale: any, opts: ReceiptOpts = {}) {
     hour: '2-digit', minute: '2-digit',
   })
 
-  const lignes = (sale.items ?? []).map((it: any) => `
+  const lignes = (sale.items ?? []).map((it: any) => {
+    const typeLabel = it.type_prix === 'gros' ? ' (Gros)' : ''
+    return `
 <div class="row">
   <span class="item-name">${Number(it.quantite)}× ${it.designation}</span>
   <span>${fmt(it.total_ligne_ttc)}</span>
 </div>
-<div class="sub">${Number(it.quantite)} × ${fmt(it.prix_unitaire_ttc)} DT</div>`).join('\n')
+<div class="sub">${Number(it.quantite)} × ${fmt(it.prix_unitaire_ttc)} DT${typeLabel}</div>`
+  }).join('\n')
 
   const remise = Number(sale.remise_montant ?? 0) > 0
     ? `<div class="row"><span>Remise</span><span>- ${fmt(sale.remise_montant)} DT</span></div>`

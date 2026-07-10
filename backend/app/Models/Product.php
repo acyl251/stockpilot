@@ -23,6 +23,7 @@ class Product extends BaseModel
         'prix_achat_ht',
         'taux_tva',
         'prix_vente_ht',
+        'prix_vente_gros',
         'type',
         'attributs',
         'actif',
@@ -32,13 +33,14 @@ class Product extends BaseModel
     const TYPE_COMPOSE = 'compose';
 
     protected $casts = [
-        'quantite'       => 'decimal:3',
-        'seuil_alerte'   => 'decimal:3',
-        'prix_achat_ht'  => 'decimal:3',
-        'taux_tva'       => 'decimal:2',
-        'prix_vente_ht'  => 'decimal:3',
-        'attributs'      => 'array',
-        'actif'          => 'boolean',
+        'quantite'         => 'decimal:3',
+        'seuil_alerte'     => 'decimal:3',
+        'prix_achat_ht'    => 'decimal:3',
+        'taux_tva'         => 'decimal:2',
+        'prix_vente_ht'    => 'decimal:3',
+        'prix_vente_gros'  => 'decimal:3',
+        'attributs'        => 'array',
+        'actif'            => 'boolean',
     ];
 
     // On Oracle: virtual DB columns. On SQLite: computed here.

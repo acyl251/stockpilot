@@ -117,6 +117,7 @@ class SaleController extends Controller
             'items.*.product_id'       => 'nullable|integer',
             'items.*.supplement_id'    => 'nullable|integer',
             'items.*.quantite'         => 'required|numeric|min:0.001',
+            'items.*.type_prix'        => 'nullable|in:detail,gros',
             'mode_paiement'        => 'required|in:especes,carte,credit',
             'montant_paye'         => 'nullable|numeric|min:0',
             'remise_type'          => 'nullable|in:pourcentage,montant',

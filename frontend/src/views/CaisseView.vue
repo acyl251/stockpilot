@@ -126,19 +126,38 @@
         <p v-if="cart.length === 0" class="text-center text-slate-400 text-sm py-10">
           Cliquez sur un produit pour l'ajouter.
         </p>
-        <div v-for="line in cart" :key="line.id" class="px-4 py-2.5 flex items-center gap-2">
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-navy truncate">{{ line.nom }}</p>
-            <p class="text-xs text-slate-400">{{ money(line.prix_vente_ttc) }} × {{ line.qty }}</p>
-          </div>
+        <div v-for="line in cart" :key="line.id" class="px-4 py-2.5 space-y-1.5">
           <div class="flex items-center gap-2">
-            <button @click="dec(line)" class="w-11 h-11 rounded-lg bg-slate-100 active:bg-slate-200 text-navy text-lg font-bold flex items-center justify-center">−</button>
-            <span class="w-8 text-center text-sm font-medium">{{ line.qty }}</span>
-            <button @click="inc(line)" :disabled="line.qty >= line.stock"
-              class="w-11 h-11 rounded-lg bg-slate-100 active:bg-slate-200 text-navy text-lg font-bold flex items-center justify-center disabled:opacity-40">+</button>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-navy truncate">{{ line.nom }}</p>
+              <p class="text-xs text-slate-400">{{ money(line.prix_vente_ttc) }} × {{ line.qty }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button @click="dec(line)" class="w-11 h-11 rounded-lg bg-slate-100 active:bg-slate-200 text-navy text-lg font-bold flex items-center justify-center">−</button>
+              <span class="w-8 text-center text-sm font-medium">{{ line.qty }}</span>
+              <button @click="inc(line)" :disabled="line.qty >= line.stock"
+                class="w-11 h-11 rounded-lg bg-slate-100 active:bg-slate-200 text-navy text-lg font-bold flex items-center justify-center disabled:opacity-40">+</button>
+            </div>
+            <span class="w-20 text-right text-sm font-semibold text-navy">{{ money(line.prix_vente_ttc * line.qty) }}</span>
+            <button @click="removeLine(line)" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 active:text-red-500 text-base">✕</button>
           </div>
-          <span class="w-20 text-right text-sm font-semibold text-navy">{{ money(line.prix_vente_ttc * line.qty) }}</span>
-          <button @click="removeLine(line)" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-300 active:text-red-500 text-base">✕</button>
+          <!-- Boutons Détail/Gros (commerce uniquement) -->
+          <div v-if="auth.secteur === 'commerce' && line.prix_vente_gros && !line.is_supplement" class="flex gap-1 px-0.5">
+            <button @click="togglePrixType(line, 'detail')"
+              :class="['px-2 py-1 text-xs rounded font-medium transition-colors',
+                line.type_prix === 'detail'
+                  ? 'bg-navy text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
+              Détail
+            </button>
+            <button @click="togglePrixType(line, 'gros')"
+              :class="['px-2 py-1 text-xs rounded font-medium transition-colors',
+                line.type_prix === 'gros'
+                  ? 'bg-navy text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200']">
+              Gros
+            </button>
+          </div>
         </div>
       </div>
 
@@ -377,6 +396,7 @@ import { formatPrice } from '@/utils/currency'
 interface Product {
   id: number; nom: string; reference: string
   quantite: number; prix_vente_ttc: number; type?: string
+  prix_vente_ht?: number; taux_tva?: number; prix_vente_gros?: number
 }
 interface Supplement {
   id: number; nom: string; prix_vente: number; active: boolean
@@ -388,6 +408,10 @@ interface CartLine {
   is_supplement?: true; supplement_id?: number
   // kept for HT calculation
   prix_vente_ht?: number
+  taux_tva?: number
+  prix_vente_gros?: number
+  prix_vente_gros_ttc?: number
+  type_prix?: 'detail' | 'gros'
 }
 interface Client { id: number; nom: string; telephone?: string; solde?: number }
 
@@ -607,7 +631,19 @@ function addToCart(p: Product) {
     if (line.qty < line.stock) line.qty++
   } else {
     // Pour les composés, stock=Infinity — pas de plafond de quantité au panier
-    cart.value.push({ ...p, qty: 1, stock: isCompose(p) ? Infinity : p.quantite })
+    const prixDetailTtc = p.prix_vente_ht ? p.prix_vente_ht * (1 + (p.taux_tva ?? 0) / 100) : p.prix_vente_ttc
+    const prixGrossTtc = p.prix_vente_gros ? p.prix_vente_gros * (1 + (p.taux_tva ?? 0) / 100) : undefined
+    cart.value.push({
+      ...p,
+      qty: 1,
+      stock: isCompose(p) ? Infinity : p.quantite,
+      prix_vente_ttc: prixDetailTtc,
+      prix_vente_ht: p.prix_vente_ht,
+      taux_tva: p.taux_tva,
+      prix_vente_gros: p.prix_vente_gros,
+      prix_vente_gros_ttc: prixGrossTtc,
+      type_prix: 'detail',
+    })
   }
 }
 function addSupplementToCart(s: Supplement) {
@@ -630,6 +666,14 @@ function addSupplementToCart(s: Supplement) {
 }
 function inc(line: CartLine) { if (line.qty < line.stock) line.qty++ }
 function dec(line: CartLine) { line.qty--; if (line.qty <= 0) removeLine(line) }
+function togglePrixType(line: CartLine, type: 'detail' | 'gros') {
+  line.type_prix = type
+  if (type === 'gros' && line.prix_vente_gros_ttc) {
+    line.prix_vente_ttc = line.prix_vente_gros_ttc
+  } else if (type === 'detail' && line.prix_vente_ht) {
+    line.prix_vente_ttc = line.prix_vente_ht * (1 + (line.taux_tva ?? 0) / 100)
+  }
+}
 function removeLine(line: CartLine) {
   cart.value = cart.value.filter((l) =>
     l.is_supplement
@@ -710,7 +754,7 @@ async function validate() {
   const items = cart.value.map((l) =>
     l.is_supplement
       ? { supplement_id: l.supplement_id, quantite: l.qty }
-      : { product_id: l.id, quantite: l.qty }
+      : { product_id: l.id, quantite: l.qty, type_prix: l.type_prix ?? 'detail' }
   )
 
   // Vérification stock ingrédients (restauration uniquement, sans effet de bord)

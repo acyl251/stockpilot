@@ -41,6 +41,7 @@
             <th class="text-left px-4 py-3 text-slate-600 font-semibold">Catégorie</th>
             <th class="text-right px-4 py-3 text-slate-600 font-semibold">Quantité</th>
             <th class="text-right px-4 py-3 text-slate-600 font-semibold">Prix achat HT</th>
+            <th class="text-right px-4 py-3 text-slate-600 font-semibold">Prix vente</th>
             <th class="text-center px-4 py-3 text-slate-600 font-semibold">Statut</th>
             <th class="px-4 py-3"></th>
           </tr>
@@ -67,6 +68,12 @@
               {{ p.quantite }} {{ p.unite_mesure }}
             </td>
             <td class="px-4 py-3 text-right text-slate-600">{{ formatPrice(p.prix_achat_ht) }}</td>
+            <td class="px-4 py-3 text-right text-slate-600">
+              <span v-if="auth.secteur === 'commerce' && p.prix_vente_gros">
+                {{ formatPrice(p.prix_vente_ht) }} | {{ formatPrice(p.prix_vente_gros) }}
+              </span>
+              <span v-else>{{ formatPrice(p.prix_vente_ht) }}</span>
+            </td>
             <td class="px-4 py-3 text-center">
               <div class="flex flex-col items-center gap-1">
                 <span :class="['badge-stock px-2 py-0.5 rounded-full text-xs font-semibold',
