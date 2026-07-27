@@ -14,6 +14,9 @@ export interface Product {
   prix_vente_ht: number
   prix_vente_ttc: number
   prix_vente_gros?: number
+  unite_vente?: string
+  quantite_par_lot?: number
+  lots_par_palette?: number
   taux_tva: number
   statut: 'En stock' | 'Alerte' | 'Rupture'
   en_alerte: boolean

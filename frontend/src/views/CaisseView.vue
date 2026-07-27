@@ -130,7 +130,10 @@
           <div class="flex items-center gap-2">
             <div class="flex-1 min-w-0">
               <p class="text-sm font-medium text-navy truncate">{{ line.nom }}</p>
-              <p class="text-xs text-slate-400">{{ money(line.prix_vente_ttc) }} × {{ line.qty }}</p>
+              <p class="text-xs text-slate-400">
+                {{ money(line.prix_vente_ttc) }} × {{ line.qty }}
+                <span v-if="line.unite_vente"> {{ line.unite_vente }}</span>
+              </p>
             </div>
             <div class="flex items-center gap-2">
               <button @click="dec(line)" class="w-11 h-11 rounded-lg bg-slate-100 active:bg-slate-200 text-navy text-lg font-bold flex items-center justify-center">−</button>
@@ -397,6 +400,7 @@ interface Product {
   id: number; nom: string; reference: string
   quantite: number; prix_vente_ttc: number; type?: string
   prix_vente_ht?: number; taux_tva?: number; prix_vente_gros?: number
+  unite_vente?: string; quantite_par_lot?: number; lots_par_palette?: number
 }
 interface Supplement {
   id: number; nom: string; prix_vente: number; active: boolean
@@ -412,6 +416,7 @@ interface CartLine {
   prix_vente_gros?: number
   prix_vente_gros_ttc?: number
   type_prix?: 'detail' | 'gros'
+  unite_vente?: string; quantite_par_lot?: number; lots_par_palette?: number
 }
 interface Client { id: number; nom: string; telephone?: string; solde?: number }
 
@@ -643,6 +648,9 @@ function addToCart(p: Product) {
       prix_vente_gros: p.prix_vente_gros,
       prix_vente_gros_ttc: prixGrossTtc,
       type_prix: 'detail',
+      unite_vente: p.unite_vente,
+      quantite_par_lot: p.quantite_par_lot,
+      lots_par_palette: p.lots_par_palette,
     })
   }
 }

@@ -24,6 +24,9 @@ class Product extends BaseModel
         'taux_tva',
         'prix_vente_ht',
         'prix_vente_gros',
+        'unite_vente',
+        'quantite_par_lot',
+        'lots_par_palette',
         'type',
         'attributs',
         'actif',
@@ -39,6 +42,8 @@ class Product extends BaseModel
         'taux_tva'         => 'decimal:2',
         'prix_vente_ht'    => 'decimal:3',
         'prix_vente_gros'  => 'decimal:3',
+        'quantite_par_lot' => 'integer',
+        'lots_par_palette' => 'integer',
         'attributs'        => 'array',
         'actif'            => 'boolean',
     ];

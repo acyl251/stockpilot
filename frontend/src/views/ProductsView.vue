@@ -65,7 +65,10 @@
             </td>
             <td class="px-4 py-3 text-right font-semibold"
               :class="p.en_rupture ? 'text-red-600' : p.en_alerte ? 'text-amber-600' : 'text-slate-800'">
-              {{ p.quantite }} {{ p.unite_mesure }}
+              <div>{{ p.quantite }} {{ p.unite_mesure }}</div>
+              <div v-if="auth.secteur === 'commerce' && p.unite_vente && p.lots_par_palette" class="text-xs text-slate-500">
+                ({{ (p.quantite / p.lots_par_palette).toFixed(2) }} palettes)
+              </div>
             </td>
             <td class="px-4 py-3 text-right text-slate-600">{{ formatPrice(p.prix_achat_ht) }}</td>
             <td class="px-4 py-3 text-right text-slate-600">

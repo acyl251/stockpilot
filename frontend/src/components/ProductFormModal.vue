@@ -103,6 +103,40 @@
               <p class="text-slate-400 text-xs mt-1">Optionnel — pour vente en gros (dépôts, distributeurs)</p>
             </div>
 
+            <!-- Conditionnement (commerce only) -->
+            <template v-if="auth.secteur === 'commerce'">
+              <div class="col-span-2 border-t border-slate-200 pt-4 mt-2">
+                <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Conditionnement</p>
+                <div class="grid grid-cols-3 gap-3">
+                  <div>
+                    <label class="form-label">Unité de vente</label>
+                    <select v-model="form.unite_vente" class="form-input">
+                      <option value="">— Aucune —</option>
+                      <option value="lot">Lot</option>
+                      <option value="carton">Carton</option>
+                      <option value="bouteille">Bouteille</option>
+                      <option value="pièce">Pièce</option>
+                      <option value="palette">Palette</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label class="form-label">Qté par {{ form.unite_vente || 'unité' }}</label>
+                    <input v-model.number="form.quantite_par_lot" type="number" min="0" step="1"
+                      class="form-input" placeholder="ex: 6" />
+                  </div>
+                  <div>
+                    <label class="form-label">Lots par palette</label>
+                    <input v-model.number="form.lots_par_palette" type="number" min="0" step="1"
+                      class="form-input" placeholder="ex: 64" />
+                  </div>
+                </div>
+                <div v-if="form.unite_vente && form.quantite_par_lot && form.lots_par_palette"
+                  class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-700">
+                  1 palette = {{ form.lots_par_palette }} lots = {{ form.lots_par_palette * form.quantite_par_lot }} {{ form.unite_vente }}
+                </div>
+              </div>
+            </template>
+
             <!-- Live margin indicator — hidden in restauration (food cost used instead) -->
             <div v-if="showMargin && !auth.isRestauration" class="col-span-2">
               <div :class="['rounded-lg px-3 py-2 text-sm flex items-center justify-between border',
@@ -295,19 +329,22 @@ const KNOWN_UNITS = UNIT_GROUPS.flatMap(g => g.units.map(u => u[0]))
 
 const form = ref<any>(props.product
   ? {
-      nom:             props.product.nom ?? '',
-      reference:       props.product.reference ?? '',
-      description:     props.product.description ?? '',
-      unite_mesure:    props.product.unite_mesure ?? 'unité',
-      category_id:     props.product.category?.id ?? '',
-      product_type_id: props.product.product_type?.id ?? '',
-      seuil_alerte:    Number(props.product.seuil_alerte ?? 0),
-      prix_achat_ht:   Number(props.product.prix_achat_ht ?? 0),
-      taux_tva:        auth.isRestauration ? 0 : Number(props.product.taux_tva ?? 19),
-      prix_vente_ht:   Number(props.product.prix_vente_ht ?? 0),
-      prix_vente_gros: Number(props.product.prix_vente_gros ?? 0),
-      attributs:       { ...(props.product.attributs ?? {}) },
-      type:            props.product.type ?? 'simple',
+      nom:               props.product.nom ?? '',
+      reference:         props.product.reference ?? '',
+      description:       props.product.description ?? '',
+      unite_mesure:      props.product.unite_mesure ?? 'unité',
+      category_id:       props.product.category?.id ?? '',
+      product_type_id:   props.product.product_type?.id ?? '',
+      seuil_alerte:      Number(props.product.seuil_alerte ?? 0),
+      prix_achat_ht:     Number(props.product.prix_achat_ht ?? 0),
+      taux_tva:          auth.isRestauration ? 0 : Number(props.product.taux_tva ?? 19),
+      prix_vente_ht:     Number(props.product.prix_vente_ht ?? 0),
+      prix_vente_gros:   Number(props.product.prix_vente_gros ?? 0),
+      unite_vente:       props.product.unite_vente ?? '',
+      quantite_par_lot:  Number(props.product.quantite_par_lot ?? 0),
+      lots_par_palette:  Number(props.product.lots_par_palette ?? 0),
+      attributs:         { ...(props.product.attributs ?? {}) },
+      type:              props.product.type ?? 'simple',
     }
   : {
       nom: '', reference: '', description: '', unite_mesure: 'unité',
@@ -315,6 +352,7 @@ const form = ref<any>(props.product
       seuil_alerte: 0, prix_achat_ht: 0,
       taux_tva: auth.isRestauration ? 0 : 19,
       prix_vente_ht: 0, prix_vente_gros: 0,
+      unite_vente: '', quantite_par_lot: 0, lots_par_palette: 0,
       attributs: {}, type: props.defaultType ?? 'simple',
     })
 
