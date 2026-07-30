@@ -15,6 +15,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Super-admin plateforme — idempotent, créé avant le garde ci-dessous
+        // pour être (re)créé même si les données démo existent déjà.
+        $this->seedSuperAdmin();
+
         // Idempotent: skip if the demo admin already exists (safe to run on every deploy)
         if (User::where('email', 'admin@test.tn')->exists()) {
             $this->command?->info('Database already seeded — skipping.');
@@ -88,5 +92,31 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->command->info("Seeded: org={$org->nom}, user={$admin->email} (password: Password123!)");
+    }
+
+    /**
+     * Crée le super-admin plateforme (sans organisation). Idempotent.
+     * Identifiants issus de l'env, avec des valeurs par défaut.
+     */
+    private function seedSuperAdmin(): void
+    {
+        $email = env('SUPER_ADMIN_EMAIL', 'admin@stockpilot.tn');
+
+        // Un seul super-admin autorisé sur toute la plateforme.
+        if (User::where('role', 'super_admin')->exists() || User::where('email', $email)->exists()) {
+            return;
+        }
+
+        User::create([
+            'organisation_id' => null,
+            'nom'             => 'Super',
+            'prenom'          => 'Admin',
+            'email'           => $email,
+            'password'        => Hash::make(env('SUPER_ADMIN_PASSWORD', 'SuperAdmin@2025')),
+            'role'            => 'super_admin',
+            'actif'           => true,
+        ]);
+
+        $this->command?->info("Super-admin créé : {$email}");
     }
 }
