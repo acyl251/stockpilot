@@ -2,34 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── CSS Variables — palette StockPilot ──────────────────────────────────── */
+:root {
+  --color-primary:        #0F172A;  /* navy foncé — sidebar, headers */
+  --color-secondary:      #1E293B;  /* navy moyen — éléments secondaires */
+  --color-accent:         #F59E0B;  /* doré — boutons principaux, highlights */
+  --color-accent-hover:   #D97706;  /* doré foncé — hover */
+  --color-bg:             #F8FAFC;  /* fond général */
+  --color-surface:        #FFFFFF;  /* cartes, modals */
+  --color-border:         #E2E8F0;  /* bordures */
+  --color-text:           #0F172A;  /* texte principal */
+  --color-text-secondary: #64748B;  /* texte secondaire */
+  --color-success:        #10B981;
+  --color-danger:         #EF4444;
+  --color-warning:        #F59E0B;
+}
+
 @layer base {
   html {
     font-family: 'Inter', 'DM Sans', sans-serif;
   }
 
   body {
-    @apply bg-slate-50 text-slate-800 antialiased;
+    @apply antialiased;
+    background-color: var(--color-bg);
+    color: var(--color-text);
   }
 }
 
 @layer components {
+  /* ─── Boutons ─────────────────────────────────────────────────────────── */
   .btn-primary {
-    @apply bg-gold hover:bg-gold-light text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+    @apply bg-gold hover:bg-gold-dark text-navy font-semibold px-5 py-2.5 rounded-lg
+           shadow-sm transition-colors;
   }
 
   .btn-secondary {
-    @apply bg-navy hover:bg-navy-light text-white font-semibold px-4 py-2 rounded-lg transition-colors;
+    @apply bg-transparent border border-app-border text-navy font-medium px-5 py-2.5
+           rounded-lg hover:bg-app-bg transition-colors;
   }
 
-  .badge-stock {
-    @apply px-2 py-0.5 rounded-full text-xs font-semibold;
+  .btn-danger {
+    @apply bg-danger hover:bg-red-600 text-white font-semibold px-5 py-2.5 rounded-lg
+           shadow-sm transition-colors;
   }
 
-  .badge-ok      { @apply badge-stock bg-emerald-100 text-emerald-700; }
-  .badge-alerte  { @apply badge-stock bg-amber-100   text-amber-700; }
-  .badge-rupture { @apply badge-stock bg-red-100     text-red-700; }
-
+  /* ─── Cartes ──────────────────────────────────────────────────────────── */
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-slate-100 p-6;
+    @apply bg-surface border border-app-border rounded-xl p-6 shadow-card
+           transition-shadow;
+  }
+  .card-hover {
+    @apply hover:shadow-card-hover;
+  }
+
+  /* ─── Inputs ──────────────────────────────────────────────────────────── */
+  .form-input {
+    @apply w-full bg-surface border border-app-border rounded-lg px-3 py-2 text-sm
+           text-navy placeholder:text-slate-400
+           focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20
+           transition-colors;
+  }
+  .form-label {
+    @apply block text-[13px] font-medium text-text-muted mb-1;
+  }
+  .input-error {
+    @apply border-danger focus:border-danger focus:ring-danger/20;
+  }
+
+  /* ─── Badges ──────────────────────────────────────────────────────────── */
+  .badge-stock {
+    @apply px-2 py-0.5 rounded-md text-xs font-semibold;
+  }
+  .badge-ok      { @apply badge-stock bg-emerald-100 text-emerald-800; }
+  .badge-alerte  { @apply badge-stock bg-amber-100   text-amber-800; }
+  .badge-rupture { @apply badge-stock bg-red-100     text-red-800; }
+
+  /* ─── Titre de section (ligne dorée à gauche) ─────────────────────────── */
+  .section-title {
+    @apply text-lg font-semibold text-navy border-l-[3px] border-gold pl-3;
   }
 }

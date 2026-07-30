@@ -17,7 +17,7 @@
         <div class="flex gap-2">
           <RouterLink to="/app/config"
             @click="limitStore.hide()"
-            class="flex-1 text-center bg-gold hover:bg-yellow-500 text-white rounded-lg py-2 text-sm font-medium transition-colors">
+            class="flex-1 text-center bg-gold hover:bg-gold-dark text-navy rounded-lg py-2 text-sm font-medium transition-colors">
             Voir les plans
           </RouterLink>
           <button @click="limitStore.hide()"
@@ -37,19 +37,19 @@
     <!-- Main content -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Top bar -->
-      <header class="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <h1 class="text-lg font-semibold text-navy">{{ pageTitle }}</h1>
+      <header class="bg-white shadow-sm z-10 h-16 px-6 flex items-center justify-between">
+        <h1 class="text-xl font-bold text-navy">{{ pageTitle }}</h1>
         <div class="flex items-center gap-4">
 
-          <!-- Bouton recherche globale -->
+          <!-- Bouton recherche globale (pill) -->
           <button @click="globalSearch?.openSearch()"
-            class="hidden sm:flex items-center gap-2 text-sm text-slate-400 hover:text-slate-600 border border-slate-200 hover:border-slate-300 rounded-lg px-3 py-1.5 transition-colors">
+            class="hidden sm:flex items-center gap-2 text-sm text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-full px-4 py-2 transition-colors">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                 d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"/>
             </svg>
             <span>Rechercher…</span>
-            <kbd class="text-xs border border-slate-200 rounded px-1 py-0.5 leading-none">Ctrl+K</kbd>
+            <kbd class="text-xs bg-white border border-slate-200 rounded px-1.5 py-0.5 leading-none">Ctrl+K</kbd>
           </button>
 
           <!-- Alert badge -->
@@ -67,12 +67,12 @@
           </RouterLink>
 
           <!-- User menu -->
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-full bg-navy flex items-center justify-center text-white text-sm font-semibold">
+          <div class="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+            <div class="w-9 h-9 rounded-full bg-gold flex items-center justify-center text-navy text-sm font-bold">
               {{ userInitials }}
             </div>
-            <span class="text-sm text-slate-600 hidden md:block">{{ auth.user?.prenom }}</span>
-            <button @click="handleLogout" class="text-slate-400 hover:text-red-500 transition-colors text-sm">
+            <span class="text-sm font-medium text-navy hidden md:block">{{ auth.user?.prenom }}</span>
+            <button @click="handleLogout" class="text-slate-400 hover:text-red-500 transition-colors text-sm ml-1">
               Déconnexion
             </button>
           </div>

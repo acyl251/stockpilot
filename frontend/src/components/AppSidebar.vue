@@ -3,29 +3,31 @@
     <!-- Logo -->
     <div class="px-6 py-5 border-b border-navy-light">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 bg-gold rounded-lg flex items-center justify-center">
-          <span class="text-white font-bold text-sm">S</span>
+        <div class="w-9 h-9 bg-gold rounded-xl flex items-center justify-center shadow-sm">
+          <span class="text-navy font-bold text-base">S</span>
         </div>
         <div>
           <p class="text-white font-bold text-lg leading-none">StockPilot</p>
-          <p class="text-slate-400 text-xs mt-0.5">{{ orgName }}</p>
+          <p class="text-slate-400 text-xs mt-1 truncate max-w-[9rem]">{{ orgName }}</p>
         </div>
       </div>
     </div>
 
     <!-- Navigation -->
-    <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+    <nav class="flex-1 overflow-y-auto px-4 py-6 space-y-1.5">
       <SidebarLink v-for="item in navItems" :key="item.to"
         :to="item.to" :icon="item.icon" :label="item.label"
         :badge="item.badge" />
     </nav>
 
     <!-- Plan badge -->
-    <div class="px-6 py-4 border-t border-navy-light">
-      <div class="bg-navy-light rounded-lg px-3 py-2">
-        <p class="text-slate-400 text-xs">Plan actuel</p>
-        <p class="text-gold font-semibold text-sm">{{ planName }}</p>
-        <p v-if="hasAI" class="text-emerald-400 text-xs mt-0.5">IA activée</p>
+    <div class="px-4 py-4 border-t border-navy-light">
+      <div class="bg-navy-light rounded-xl px-4 py-3">
+        <p class="text-slate-400 text-xs uppercase tracking-wide">Plan actuel</p>
+        <p class="text-gold font-semibold text-sm mt-0.5">{{ planName }}</p>
+        <p v-if="hasAI" class="text-emerald-400 text-xs mt-1 flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> IA activée
+        </p>
       </div>
     </div>
   </aside>

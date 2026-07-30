@@ -3,10 +3,10 @@
     <button
       @click="navigate"
       :class="[
-        'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+        'w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm transition-all',
         isActive
-          ? 'bg-gold text-white shadow-sm'
-          : 'text-slate-300 hover:bg-navy-light hover:text-white',
+          ? 'bg-gold text-navy font-semibold shadow-sm'
+          : 'text-slate-400 font-medium hover:bg-navy-light hover:text-white',
       ]"
     >
       <!-- Icon -->

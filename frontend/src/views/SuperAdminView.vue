@@ -7,7 +7,7 @@
         <p class="text-slate-500 text-sm mt-0.5">Vue super-admin — tous les tenants</p>
       </div>
       <div class="flex items-center gap-3">
-        <button @click="openCreateOrg" class="bg-gold hover:bg-yellow-500 text-white text-sm font-medium px-4 py-2 rounded-lg">
+        <button @click="openCreateOrg" class="bg-gold hover:bg-gold-dark text-navy text-sm font-medium px-4 py-2 rounded-lg">
           + Nouvelle société
         </button>
         <span class="bg-violet-100 text-violet-700 text-xs font-semibold px-3 py-1.5 rounded-full">
@@ -113,7 +113,7 @@
           <p v-if="orgError" class="text-red-500 text-xs">{{ orgError }}</p>
           <div class="flex gap-2 pt-2">
             <button type="button" @click="showOrgForm = false" class="flex-1 border rounded-lg py-2 text-sm hover:bg-slate-50">Annuler</button>
-            <button type="submit" :disabled="orgSaving" class="flex-1 bg-gold hover:bg-yellow-500 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50">
+            <button type="submit" :disabled="orgSaving" class="flex-1 bg-gold hover:bg-gold-dark text-navy rounded-lg py-2 text-sm font-medium disabled:opacity-50">
               {{ orgSaving ? 'Création…' : 'Créer la société' }}
             </button>
           </div>
@@ -422,7 +422,7 @@
           <p v-if="editError" class="text-red-500 text-xs">{{ editError }}</p>
           <div class="flex gap-2 pt-1">
             <button type="button" @click="showEditModal = false" class="flex-1 border rounded-lg py-2 text-sm hover:bg-slate-50">Annuler</button>
-            <button type="submit" :disabled="editSaving" class="flex-1 bg-gold hover:bg-yellow-500 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50">
+            <button type="submit" :disabled="editSaving" class="flex-1 bg-gold hover:bg-gold-dark text-navy rounded-lg py-2 text-sm font-medium disabled:opacity-50">
               {{ editSaving ? 'Enregistrement…' : 'Enregistrer' }}
             </button>
           </div>

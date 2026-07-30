@@ -78,7 +78,7 @@
           <button v-for="p in products" :key="p.id"
             @click="addToCart(p)"
             :disabled="availableStock(p) <= 0"
-            class="card p-4 text-left active:ring-2 active:ring-gold transition disabled:opacity-40 disabled:cursor-not-allowed flex flex-col min-h-[80px]">
+            class="card p-4 text-left border-2 border-transparent hover:border-gold hover:shadow-card-hover hover:scale-[1.02] active:scale-100 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:border-transparent flex flex-col min-h-[80px]">
             <p class="font-semibold text-navy text-base leading-snug line-clamp-2">{{ p.nom }}</p>
             <p class="text-slate-400 text-sm font-mono mt-0.5">{{ p.reference }}</p>
             <div class="mt-auto pt-2 flex items-center justify-between">
@@ -114,6 +114,7 @@
       <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <h2 class="font-bold text-navy">Panier</h2>
+          <span v-if="cart.length" class="bg-gold text-navy text-xs font-bold rounded-full px-2 py-0.5">{{ cart.length }}</span>
           <span v-if="!isOnline" class="text-xs text-red-500 font-medium">🔴 Hors ligne</span>
           <span v-else-if="pendingSalesCount > 0" class="text-xs text-amber-600 font-medium">🟡 {{ pendingSalesCount }} en attente</span>
           <span v-else class="text-xs text-emerald-500">🟢</span>
@@ -192,8 +193,9 @@
           <span>Remise</span><span>− {{ money(remiseMontant) }}</span>
         </div>
 
-        <div class="flex justify-between text-lg font-bold text-navy">
-          <span>Total TTC</span><span>{{ money(totalTtc) }}</span>
+        <div class="flex justify-between items-baseline border-t border-slate-200 pt-3">
+          <span class="text-base font-semibold text-navy">Total TTC</span>
+          <span class="text-2xl font-bold text-gold">{{ money(totalTtc) }}</span>
         </div>
 
         <div class="grid grid-cols-3 gap-2 pt-1">
