@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Client;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\RestaurantTable;
@@ -157,6 +158,52 @@ class DashboardController extends Controller
                     ->where('statut', '!=', Sale::STATUT_ANNULEE)
                     ->whereDate('date_vente', today())
                     ->sum('total_ttc'), 3),
+            ];
+        }
+
+        // ── Stats commerce ───────────────────────────────────────────────────
+        if (! $org->isRestauration()) {
+            // Top 5 produits les plus vendus (par quantité) ce mois-ci
+            $topVendus = Sale::where('sales.statut', '!=', Sale::STATUT_ANNULEE)
+                ->whereMonth('sales.date_vente', now()->month)
+                ->whereYear('sales.date_vente', now()->year)
+                ->join('sale_items', 'sale_items.sale_id', '=', 'sales.id')
+                ->groupBy('sale_items.designation')
+                ->selectRaw('sale_items.designation as nom')
+                ->selectRaw('SUM(sale_items.quantite) as qte')
+                ->selectRaw('SUM(sale_items.total_ligne_ttc) as ca')
+                ->orderByDesc('qte')
+                ->limit(5)
+                ->get()
+                ->map(fn($r) => [
+                    'nom' => $r->nom,
+                    'qte' => (float) $r->qte,
+                    'ca'  => round((float) $r->ca, 3),
+                ]);
+
+            // Clients avec ardoise (solde dû > 0), triés par solde décroissant
+            $soldeExpr = "(SELECT COALESCE(SUM(s.total_ttc - s.montant_regle), 0)
+                           FROM sales s
+                           WHERE s.client_id = clients.id
+                             AND s.organisation_id = clients.organisation_id
+                             AND s.statut != 'annulee')";
+
+            $clientsArdoise = Client::query()
+                ->select('clients.id', 'clients.nom', 'clients.telephone')
+                ->selectRaw("$soldeExpr as solde")
+                ->whereRaw("$soldeExpr > 0")
+                ->orderByDesc('solde')
+                ->limit(5)
+                ->get()
+                ->map(fn($c) => [
+                    'id'    => $c->id,
+                    'nom'   => $c->nom,
+                    'solde' => round((float) $c->solde, 3),
+                ]);
+
+            $response['commerce'] = [
+                'top_produits_vendus' => $topVendus,
+                'clients_ardoise'     => $clientsArdoise,
             ];
         }
 

@@ -73,41 +73,44 @@
       </div>
     </div>
 
-    <div class="flex items-center justify-between border-t border-slate-200 pt-6">
-      <h2 class="text-lg font-semibold text-navy">Types de produits</h2>
-      <button v-if="!auth.isRestrictedOperateur" @click="showTypeForm = true" class="btn-primary">+ Nouveau type</button>
-    </div>
+    <!-- ── Types de produits (restauration uniquement) ────────────────── -->
+    <template v-if="auth.isRestauration">
+      <div class="flex items-center justify-between border-t border-slate-200 pt-6">
+        <h2 class="text-lg font-semibold text-navy">Types de produits</h2>
+        <button v-if="!auth.isRestrictedOperateur" @click="showTypeForm = true" class="btn-primary">+ Nouveau type</button>
+      </div>
 
-    <div v-if="loading" class="text-center py-10 text-slate-400">Chargement…</div>
+      <div v-if="loading" class="text-center py-10 text-slate-400">Chargement…</div>
 
-    <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <div v-for="t in types" :key="t.id" class="card hover:shadow-md transition-shadow">
-        <div class="flex items-start justify-between mb-3">
-          <div>
-            <p class="font-semibold text-navy">{{ t.icone }} {{ t.nom }}</p>
-            <p class="text-xs text-slate-500 mt-0.5">{{ t.attributes?.length ?? 0 }} attribut(s)</p>
+      <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-for="t in types" :key="t.id" class="card hover:shadow-md transition-shadow">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <p class="font-semibold text-navy">{{ t.icone }} {{ t.nom }}</p>
+              <p class="text-xs text-slate-500 mt-0.5">{{ t.attributes?.length ?? 0 }} attribut(s)</p>
+            </div>
+            <span v-if="t.suggere_par_ia"
+              class="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full font-medium">IA</span>
           </div>
-          <span v-if="t.suggere_par_ia"
-            class="text-xs bg-gold/10 text-gold px-2 py-0.5 rounded-full font-medium">IA</span>
+          <div class="flex flex-wrap gap-1.5">
+            <span v-for="attr in t.attributes" :key="attr.id"
+              :class="['text-xs px-2 py-0.5 rounded-full font-medium',
+                attr.type_donnee === 'number'  ? 'bg-blue-100 text-blue-700' :
+                attr.type_donnee === 'date'    ? 'bg-purple-100 text-purple-700' :
+                attr.type_donnee === 'boolean' ? 'bg-emerald-100 text-emerald-700' :
+                attr.type_donnee === 'select'  ? 'bg-amber-100 text-amber-700' :
+                                                 'bg-slate-100 text-slate-600']">
+              {{ attr.label }}
+            </span>
+          </div>
         </div>
-        <div class="flex flex-wrap gap-1.5">
-          <span v-for="attr in t.attributes" :key="attr.id"
-            :class="['text-xs px-2 py-0.5 rounded-full font-medium',
-              attr.type_donnee === 'number'  ? 'bg-blue-100 text-blue-700' :
-              attr.type_donnee === 'date'    ? 'bg-purple-100 text-purple-700' :
-              attr.type_donnee === 'boolean' ? 'bg-emerald-100 text-emerald-700' :
-              attr.type_donnee === 'select'  ? 'bg-amber-100 text-amber-700' :
-                                               'bg-slate-100 text-slate-600']">
-            {{ attr.label }}
-          </span>
-        </div>
-      </div>
 
-      <!-- Empty -->
-      <div v-if="types.length === 0" class="col-span-full text-center py-10 text-slate-400">
-        Aucun type de produit. Cliquez sur « Nouveau type » pour commencer.
+        <!-- Empty -->
+        <div v-if="types.length === 0" class="col-span-full text-center py-10 text-slate-400">
+          Aucun type de produit. Cliquez sur « Nouveau type » pour commencer.
+        </div>
       </div>
-    </div>
+    </template>
 
     <!-- Categories section -->
     <div class="border-t border-slate-200 pt-6">

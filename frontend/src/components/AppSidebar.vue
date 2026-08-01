@@ -46,32 +46,47 @@ const orgName  = computed(() => auth.user?.organisation?.nom ?? '')
 const planName = computed(() => (auth.user?.organisation as any)?.plan?.nom ?? 'Starter')
 const hasAI    = computed(() => auth.hasAI)
 
+// Liens communs aux deux secteurs, insérés après les liens spécifiques
+const commonTailItems = computed(() => [
+  { to: '/app/clients',  icon: 'clients',   label: 'Clients', badge: undefined },
+  { to: '/app/movements', icon: 'movements', label: 'Mouvements', badge: undefined },
+  ...(!auth.isRestrictedOperateur ? [{ to: '/app/fournisseurs', icon: 'fournisseurs', label: 'Fournisseurs', badge: undefined }] : []),
+  { to: '/app/alerts',   icon: 'alerts',    label: 'Alertes', badge: alerts.totalAlerts() || undefined },
+  ...(auth.isAdmin && auth.isMultiPDV ? [{ to: '/app/points-de-vente', icon: 'ventes',    label: 'Points de vente', badge: undefined }] : []),
+  ...(auth.isAdmin && auth.isMultiPDV ? [{ to: '/app/transferts',      icon: 'movements', label: 'Transferts',      badge: undefined }] : []),
+  ...(auth.chaineVisible ? [{ to: '/app/chaine', icon: 'chaine', label: 'Vue chaîne', badge: undefined }] : []),
+  { to: '/app/config',   icon: 'config',    label: 'Configuration', badge: undefined },
+  ...(auth.isAdmin ? [{ to: '/app/users', icon: 'users', label: 'Utilisateurs', badge: undefined }] : []),
+  ...(auth.isAdmin ? [{ to: '/app/logs',  icon: 'logs',  label: 'Activité',     badge: undefined }] : []),
+])
+
+const restaurationItems = computed(() => [
+  { to: '/app',               icon: 'dashboard',    label: 'Tableau de bord', badge: undefined },
+  { to: '/app/products',      icon: 'products',     label: 'Catalogue', badge: undefined },
+  { to: '/app/menu',          icon: 'menu',          label: 'Menu', badge: undefined },
+  { to: '/app/supplements',   icon: 'supplements',   label: 'Suppléments', badge: undefined },
+  { to: '/app/tables',        icon: 'tables',        label: 'Tables', badge: undefined },
+  { to: '/app/consommation',  icon: 'consommation',  label: 'Consommation', badge: undefined },
+  { to: '/app/caisse',        icon: 'caisse',        label: 'Caisse', badge: undefined },
+  { to: '/app/ventes',        icon: 'ventes',        label: 'Ventes', badge: undefined },
+  ...commonTailItems.value,
+])
+
+const commerceItems = computed(() => [
+  { to: '/app',               icon: 'dashboard',    label: 'Tableau de bord', badge: undefined },
+  { to: '/app/products',      icon: 'products',     label: 'Catalogue', badge: undefined },
+  { to: '/app/caisse',        icon: 'caisse',        label: 'Caisse', badge: undefined },
+  { to: '/app/ventes',        icon: 'ventes',        label: 'Ventes', badge: undefined },
+  ...commonTailItems.value,
+])
+
 const navItems = computed(() => {
   if (auth.isSuperAdmin) {
     return [
       { to: '/app/super-admin', icon: 'superadmin', label: 'Plateforme', badge: undefined },
     ]
   }
-  return [
-    { to: '/app',          icon: 'dashboard', label: 'Tableau de bord', badge: undefined },
-    { to: '/app/products', icon: 'products',  label: 'Catalogue', badge: undefined },
-    ...(auth.isRestauration ? [{ to: '/app/menu', icon: 'menu', label: 'Menu', badge: undefined }] : []),
-    ...(auth.isRestauration ? [{ to: '/app/supplements', icon: 'supplements', label: 'Suppléments', badge: undefined }] : []),
-    ...(auth.isRestauration ? [{ to: '/app/tables',       icon: 'tables',       label: 'Tables',       badge: undefined }] : []),
-    ...(auth.isRestauration ? [{ to: '/app/consommation', icon: 'consommation', label: 'Consommation', badge: undefined }] : []),
-    { to: '/app/caisse',   icon: 'caisse',    label: 'Caisse', badge: undefined },
-    { to: '/app/ventes',   icon: 'ventes',    label: 'Ventes', badge: undefined },
-    { to: '/app/clients',  icon: 'clients',   label: 'Clients', badge: undefined },
-    { to: '/app/movements',      icon: 'movements',    label: 'Mouvements',   badge: undefined },
-    ...(!auth.isRestrictedOperateur ? [{ to: '/app/fournisseurs', icon: 'fournisseurs', label: 'Fournisseurs', badge: undefined }] : []),
-    { to: '/app/alerts',   icon: 'alerts',    label: 'Alertes',
-      badge: alerts.totalAlerts() || undefined },
-    { to: '/app/config',   icon: 'config',    label: 'Configuration', badge: undefined },
-    ...(auth.isAdmin ? [{ to: '/app/users', icon: 'users', label: 'Utilisateurs', badge: undefined }] : []),
-    ...(auth.isAdmin ? [{ to: '/app/points-de-vente', icon: 'ventes',     label: 'Points de vente', badge: undefined }] : []),
-    ...(auth.isAdmin ? [{ to: '/app/transferts',      icon: 'movements',  label: 'Transferts',      badge: undefined }] : []),
-    ...(auth.chaineVisible ? [{ to: '/app/chaine',  icon: 'chaine',     label: 'Vue chaîne',      badge: undefined }] : []),
-    ...(['admin', 'manager'].includes(auth.user?.role ?? '') ? [{ to: '/app/logs', icon: 'logs', label: 'Activité', badge: undefined }] : []),
-  ]
+  // Secteur non défini → comportement commerce par défaut (plus générique)
+  return auth.isRestauration ? restaurationItems.value : commerceItems.value
 })
 </script>

@@ -34,6 +34,8 @@ export const useAuthStore = defineStore('auth', () => {
   const isSuperAdmin      = computed(() => user.value?.role === 'super_admin')
   const secteur           = computed(() => user.value?.organisation?.secteur ?? null)
   const isRestauration    = computed(() => user.value?.organisation?.secteur === 'restauration')
+  // Commerce par défaut si le secteur n'est pas défini (comportement le plus générique)
+  const isCommerce        = computed(() => user.value?.organisation?.secteur !== 'restauration')
   const pointDeVenteId    = computed(() => user.value?.point_de_vente_id ?? null)
   const pointDeVente      = computed(() => user.value?.point_de_vente ?? null)
   // Vue Chaîne : visible uniquement si admin + au moins 2 PDVs actifs
@@ -74,5 +76,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, secteur, isRestauration, pointDeVenteId, pointDeVente, chaineVisible, isMultiPDV, isRestrictedOperateur, login, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, secteur, isRestauration, isCommerce, pointDeVenteId, pointDeVente, chaineVisible, isMultiPDV, isRestrictedOperateur, login, logout, fetchMe, initPromise }
 })

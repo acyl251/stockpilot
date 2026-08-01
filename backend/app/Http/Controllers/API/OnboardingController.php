@@ -46,7 +46,7 @@ class OnboardingController extends Controller
         $steps = [
             [
                 'id'        => 'configuration',
-                'label'     => 'Configurez votre restaurant',
+                'label'     => $isRestauration ? 'Configurez votre restaurant' : 'Configurez votre commerce',
                 'completed' => ! empty($org->nom)
                     && ! empty($org->secteur)
                     && ! empty($org->telephone)

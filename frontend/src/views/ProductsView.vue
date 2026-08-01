@@ -55,7 +55,13 @@
           </tr>
           <tr v-for="p in store.products" :key="p.id"
             class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-            <td class="px-4 py-3 font-medium text-navy">{{ p.nom }}</td>
+            <td class="px-4 py-3 font-medium text-navy">
+              {{ p.nom }}
+              <span v-if="auth.isRestauration" class="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-semibold"
+                :class="p.type === 'compose' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-500'">
+                {{ p.type === 'compose' ? 'Recette' : 'Ingrédient' }}
+              </span>
+            </td>
             <td class="px-4 py-3 text-slate-500 font-mono text-xs">{{ p.reference || '—' }}</td>
             <td class="px-4 py-3">
               <span v-if="p.category" class="px-2 py-0.5 rounded-full text-xs font-medium text-white"
@@ -66,13 +72,13 @@
             <td class="px-4 py-3 text-right font-semibold"
               :class="p.en_rupture ? 'text-red-600' : p.en_alerte ? 'text-amber-600' : 'text-slate-800'">
               <div>{{ p.quantite }} {{ p.unite_mesure }}</div>
-              <div v-if="auth.secteur === 'commerce' && p.unite_vente && p.lots_par_palette" class="text-xs text-slate-500">
+              <div v-if="auth.isCommerce && p.unite_vente && p.lots_par_palette" class="text-xs text-slate-500">
                 ({{ (p.quantite / p.lots_par_palette).toFixed(2) }} palettes)
               </div>
             </td>
             <td class="px-4 py-3 text-right text-slate-600">{{ formatPrice(p.prix_achat_ht) }}</td>
             <td class="px-4 py-3 text-right text-slate-600">
-              <span v-if="auth.secteur === 'commerce' && p.prix_vente_gros">
+              <span v-if="auth.isCommerce && p.prix_vente_gros">
                 {{ formatPrice(p.prix_vente_ht) }} | {{ formatPrice(p.prix_vente_gros) }}
               </span>
               <span v-else>{{ formatPrice(p.prix_vente_ht) }}</span>
