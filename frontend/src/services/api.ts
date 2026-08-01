@@ -67,6 +67,18 @@ export const clientsApi = {
   update: (id: number, data: object)   => api.patch(`/clients/${id}`, data),
   pay:    (id: number, data: object)   => api.post(`/clients/${id}/pay`, data),
   remind: (id: number)                 => api.post(`/clients/${id}/remind`),
+  releve:    (id: number, params?: object) => api.get(`/clients/${id}/releve`, { params }),
+  relevePdf: (id: number, params?: object) => api.get(`/clients/${id}/releve/pdf`, { params, responseType: 'blob' }),
+}
+
+// ─── Commandes clients (secteur commerce) ──────────────────────────────────────
+export const commandesClientsApi = {
+  list:              (params?: object)             => api.get('/commandes-clients', { params }),
+  get:               (id: number)                  => api.get(`/commandes-clients/${id}`),
+  create:            (data: object)                => api.post('/commandes-clients', data),
+  updateStatut:      (id: number, statut: string)  => api.patch(`/commandes-clients/${id}/statut`, { statut }),
+  transformerVente:  (id: number, modePaiement: string) => api.post(`/commandes-clients/${id}/transformer-vente`, { mode_paiement: modePaiement }),
+  bonLivraison:      (id: number)                  => api.get(`/commandes-clients/${id}/bon-livraison`, { responseType: 'blob' }),
 }
 
 // ─── Caisse (POS) ──────────────────────────────────────────────────────────────

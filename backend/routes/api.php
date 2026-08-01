@@ -27,6 +27,7 @@ use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\PointDeVenteController;
 use App\Http\Controllers\API\TransfertController;
 use App\Http\Controllers\API\ChaineController;
+use App\Http\Controllers\API\CommandeClientController;
 use App\Http\Controllers\API\SearchController;
 use App\Http\Controllers\EmailVerificationController;
 use Illuminate\Support\Facades\Route;
@@ -142,6 +143,16 @@ Route::middleware('auth.tenant')->group(function () {
     Route::patch('/clients/{id}',     [ClientController::class, 'update']);
     Route::post('/clients/{id}/pay',  [ClientController::class, 'pay']);
     Route::post('/clients/{id}/remind', [ClientController::class, 'remind']);
+    Route::get('/clients/{id}/releve',     [ClientController::class, 'releve']);
+    Route::get('/clients/{id}/releve/pdf', [ClientController::class, 'relevePdf']);
+
+    // Commandes clients + bon de livraison (secteur commerce)
+    Route::get('/commandes-clients',                       [CommandeClientController::class, 'index']);
+    Route::post('/commandes-clients',                      [CommandeClientController::class, 'store']);
+    Route::get('/commandes-clients/{id}',                  [CommandeClientController::class, 'show']);
+    Route::patch('/commandes-clients/{id}/statut',         [CommandeClientController::class, 'updateStatut']);
+    Route::post('/commandes-clients/{id}/transformer-vente', [CommandeClientController::class, 'transformerVente']);
+    Route::get('/commandes-clients/{id}/bon-livraison',    [CommandeClientController::class, 'bonLivraison']);
 
     // Organisation (infos légales / facturation)
     Route::get('/organisation',   [OrganisationController::class, 'show']);

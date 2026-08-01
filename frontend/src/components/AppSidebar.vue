@@ -77,6 +77,7 @@ const commerceItems = computed(() => [
   { to: '/app/products',      icon: 'products',     label: 'Catalogue', badge: undefined },
   { to: '/app/caisse',        icon: 'caisse',        label: 'Caisse', badge: undefined },
   { to: '/app/ventes',        icon: 'ventes',        label: 'Ventes', badge: undefined },
+  { to: '/app/commandes-clients', icon: 'commandes', label: 'Commandes', badge: undefined },
   ...commonTailItems.value,
 ])
 

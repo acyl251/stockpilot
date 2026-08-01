@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Services\ActivityLogService;
 use App\Services\ClientService;
 use App\Services\WhatsAppService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -118,6 +119,54 @@ class ClientController extends Controller
             'payment' => $payment,
             'solde'   => $this->clientService->solde($id),
         ], 201);
+    }
+
+    /** Relevé de compte — ventes à crédit sur une période donnée. */
+    public function releve(Request $request, int $id): JsonResponse
+    {
+        $data = $this->releveData($id, $request->debut, $request->fin);
+
+        return response()->json($data);
+    }
+
+    /** Relevé de compte au format PDF. */
+    public function relevePdf(Request $request, int $id)
+    {
+        $data = $this->releveData($id, $request->debut, $request->fin);
+        $org  = app('current_user')->organisation;
+
+        $pdf = Pdf::loadView('clients.releve', [
+            'client' => $data['client'],
+            'sales'  => $data['sales'],
+            'solde'  => $data['solde'],
+            'debut'  => $data['debut'],
+            'fin'    => $data['fin'],
+            'org'    => $org,
+        ])->setPaper('a4');
+
+        return $pdf->download("releve_{$data['client']->nom}.pdf");
+    }
+
+    private function releveData(int $id, ?string $debut, ?string $fin): array
+    {
+        $client = Client::findOrFail($id);
+
+        $debut = $debut ? \Carbon\Carbon::parse($debut)->startOfDay() : now()->startOfMonth();
+        $fin   = $fin   ? \Carbon\Carbon::parse($fin)->endOfDay()     : now()->endOfDay();
+
+        $sales = Sale::where('client_id', $id)
+            ->where('mode_paiement', 'credit')
+            ->whereBetween('date_vente', [$debut, $fin])
+            ->orderBy('date_vente')
+            ->get(['id', 'numero', 'numero_facture', 'date_vente', 'total_ttc', 'montant_regle']);
+
+        return [
+            'client' => $client,
+            'sales'  => $sales,
+            'solde'  => $this->clientService->solde($id),
+            'debut'  => $debut,
+            'fin'    => $fin,
+        ];
     }
 
     /** Relancer un client par WhatsApp pour son solde impayé. */

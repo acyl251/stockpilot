@@ -37,6 +37,7 @@ const router = createRouter({
         { path: 'caisse',    name: 'caisse',    component: () => import('@/views/CaisseView.vue') },
         { path: 'ventes',    name: 'ventes',    component: () => import('@/views/VentesView.vue') },
         { path: 'clients',   name: 'clients',   component: () => import('@/views/ClientsView.vue') },
+        { path: 'commandes-clients', name: 'commandes-clients', component: () => import('@/views/CommandesClientsView.vue') },
         { path: 'movements',    name: 'movements',    component: () => import('@/views/MovementsView.vue') },
         { path: 'fournisseurs', name: 'fournisseurs', component: () => import('@/views/FournisseursView.vue') },
         { path: 'alerts',    name: 'alerts',    component: () => import('@/views/AlertsView.vue') },
@@ -69,7 +70,7 @@ const router = createRouter({
 const superAdminRoutes = new Set(['super-admin', 'users'])
 
 // Routes tenant (catalogue, mouvements…) interdites au super_admin
-const tenantRoutes = new Set(['dashboard', 'products', 'menu', 'supplements', 'tables', 'consommation', 'caisse', 'ventes', 'clients', 'product-detail', 'movements', 'fournisseurs', 'alerts', 'config', 'logs', 'points-de-vente', 'transferts', 'chaine'])
+const tenantRoutes = new Set(['dashboard', 'products', 'menu', 'supplements', 'tables', 'consommation', 'caisse', 'ventes', 'clients', 'commandes-clients', 'product-detail', 'movements', 'fournisseurs', 'alerts', 'config', 'logs', 'points-de-vente', 'transferts', 'chaine'])
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()

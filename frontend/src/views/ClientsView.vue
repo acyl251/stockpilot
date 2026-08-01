@@ -33,7 +33,10 @@
             <td class="px-4 py-3 text-right font-semibold"
               :class="Number(c.solde) > 0 ? 'text-red-600' : 'text-emerald-600'">{{ money(c.solde) }}</td>
             <td class="px-4 py-3 text-right">
-              <button @click="openDetail(c.id)" class="text-gold hover:underline text-xs font-medium">Détails</button>
+              <div class="flex items-center gap-3 justify-end">
+                <button @click="openDetail(c.id)" class="text-gold hover:underline text-xs font-medium">Détails</button>
+                <button @click="openReleve(c)" class="text-indigo-600 hover:underline text-xs font-medium">Relevé de compte</button>
+              </div>
             </td>
           </tr>
         </tbody>
@@ -125,6 +128,78 @@
               <li v-if="detail.payments.length === 0" class="text-slate-400 text-sm py-2">Aucun paiement.</li>
             </ul>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Relevé de compte -->
+    <div v-if="releve" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+          <div>
+            <h2 class="font-bold text-navy text-lg">Relevé de compte — {{ releveClient?.nom }}</h2>
+            <p class="text-slate-400 text-sm">Ventes à crédit sur la période</p>
+          </div>
+          <button @click="releve = null" class="text-slate-400 hover:text-navy text-xl">✕</button>
+        </div>
+
+        <div class="p-6 space-y-4">
+          <!-- Sélecteur période -->
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="flex gap-1">
+              <button v-for="p in periodPresets" :key="p.key" @click="applyPeriodPreset(p.key)"
+                :class="['text-xs font-medium px-3 py-1.5 rounded-lg border',
+                  periodPreset === p.key ? 'bg-navy text-white border-navy' : 'border-slate-300 text-slate-600 hover:bg-slate-50']">
+                {{ p.label }}
+              </button>
+            </div>
+            <div class="flex items-end gap-2">
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">Du</label>
+                <input v-model="releveDebut" @change="periodPreset = 'custom'; fetchReleve()" type="date"
+                  class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
+              </div>
+              <div>
+                <label class="block text-xs text-slate-500 mb-1">Au</label>
+                <input v-model="releveFin" @change="periodPreset = 'custom'; fetchReleve()" type="date"
+                  class="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div v-if="releveLoading" class="text-center py-6 text-slate-400 text-sm">Chargement…</div>
+          <template v-else>
+            <table class="w-full text-sm">
+              <thead class="text-slate-500 border-b border-slate-200">
+                <tr>
+                  <th class="text-left py-2">Date</th><th class="text-left py-2">N° facture</th>
+                  <th class="text-right py-2">Montant</th><th class="text-right py-2">Réglé</th>
+                  <th class="text-right py-2">Reste</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="s in releve.sales" :key="s.id" class="border-b border-slate-100">
+                  <td class="py-2 text-slate-500">{{ formatDate(s.date_vente) }}</td>
+                  <td class="py-2 font-mono text-xs">{{ s.numero_facture ?? s.numero }}</td>
+                  <td class="py-2 text-right">{{ money(s.total_ttc) }}</td>
+                  <td class="py-2 text-right">{{ money(s.montant_regle) }}</td>
+                  <td class="py-2 text-right font-semibold" :class="(s.total_ttc - s.montant_regle) > 0 ? 'text-red-600' : 'text-slate-400'">
+                    {{ money(s.total_ttc - s.montant_regle) }}
+                  </td>
+                </tr>
+                <tr v-if="releve.sales.length === 0"><td colspan="5" class="py-4 text-center text-slate-400">Aucune vente à crédit sur cette période.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="flex items-center justify-between bg-slate-50 rounded-xl p-4">
+              <span class="text-sm text-slate-500">Total dû (solde actuel)</span>
+              <span class="text-xl font-bold text-red-600">{{ money(releve.solde) }}</span>
+            </div>
+
+            <button @click="downloadRelevePdf" :disabled="relevePdfLoading" class="btn-primary w-full disabled:opacity-50">
+              {{ relevePdfLoading ? 'Génération…' : 'Générer PDF' }}
+            </button>
+          </template>
         </div>
       </div>
     </div>
@@ -240,6 +315,75 @@ async function saveClient() {
     await fetchClients()
   } catch (e: any) {
     formError.value = e.response?.data?.message || 'Échec de la création.'
+  }
+}
+
+// ── Relevé de compte ─────────────────────────────────────────────────────────
+const releve         = ref<any>(null)
+const releveClient    = ref<any>(null)
+const releveLoading   = ref(false)
+const relevePdfLoading = ref(false)
+const releveDebut     = ref('')
+const releveFin       = ref('')
+const periodPreset    = ref<'week' | 'month' | 'custom'>('month')
+const periodPresets: { key: 'week' | 'month'; label: string }[] = [
+  { key: 'week',  label: 'Cette semaine' },
+  { key: 'month', label: 'Ce mois' },
+]
+
+function toIsoDate(d: Date): string {
+  return d.toISOString().slice(0, 10)
+}
+
+function applyPeriodPreset(key: 'week' | 'month') {
+  periodPreset.value = key
+  const now = new Date()
+  if (key === 'week') {
+    const day = (now.getDay() + 6) % 7 // lundi = 0
+    const monday = new Date(now)
+    monday.setDate(now.getDate() - day)
+    releveDebut.value = toIsoDate(monday)
+    releveFin.value   = toIsoDate(now)
+  } else {
+    releveDebut.value = toIsoDate(new Date(now.getFullYear(), now.getMonth(), 1))
+    releveFin.value   = toIsoDate(now)
+  }
+  fetchReleve()
+}
+
+function openReleve(c: any) {
+  releveClient.value = c
+  releve.value        = { sales: [], solde: 0 }
+  applyPeriodPreset('month')
+}
+
+async function fetchReleve() {
+  if (!releveClient.value) return
+  releveLoading.value = true
+  try {
+    const { data } = await clientsApi.releve(releveClient.value.id, {
+      debut: releveDebut.value, fin: releveFin.value,
+    })
+    releve.value = data
+  } finally {
+    releveLoading.value = false
+  }
+}
+
+async function downloadRelevePdf() {
+  if (!releveClient.value) return
+  relevePdfLoading.value = true
+  try {
+    const { data } = await clientsApi.relevePdf(releveClient.value.id, {
+      debut: releveDebut.value, fin: releveFin.value,
+    })
+    const url = URL.createObjectURL(new Blob([data], { type: 'application/pdf' }))
+    window.open(url, '_blank')
+    setTimeout(() => URL.revokeObjectURL(url), 10000)
+  } catch {
+    alert('Impossible de générer le relevé.')
+  } finally {
+    relevePdfLoading.value = false
   }
 }
 
