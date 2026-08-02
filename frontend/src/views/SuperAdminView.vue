@@ -68,6 +68,7 @@
               <label class="block text-xs font-medium text-slate-600 mb-1">Secteur</label>
               <select v-model="orgForm.org_secteur" class="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400">
                 <option value="commerce">Commerce</option>
+                <option value="commerce_simple">Commerce simple</option>
                 <option value="restauration">Restauration</option>
               </select>
             </div>
@@ -693,7 +694,7 @@ async function handleDemo(d: any, statut: string) {
       await openCreateOrg()
       // Pré-remplir avec les infos de la demande (après reset)
       orgForm.value.org_nom       = d.societe
-      orgForm.value.org_secteur   = ['commerce', 'restauration'].includes(d.secteur) ? d.secteur : 'commerce'
+      orgForm.value.org_secteur   = ['commerce', 'commerce_simple', 'restauration'].includes(d.secteur) ? d.secteur : 'commerce'
       orgForm.value.org_email     = d.email
       orgForm.value.org_telephone = d.telephone ?? ''
       orgForm.value.admin_prenom  = d.prenom

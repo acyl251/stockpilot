@@ -83,13 +83,30 @@ const commerceItems = computed(() => [
   ...commonTailItems.value,
 ])
 
+// Commerce simple : module allégé — pas de fournisseurs, commandes clients, chaîne multi-PDV.
+const commerceSimpleItems = computed(() => [
+  { to: '/app',               icon: 'dashboard', label: 'Tableau de bord', badge: undefined },
+  ...(auth.canViewAnalytics ? [{ to: '/app/analytique', icon: 'analytique', label: 'Analytique', badge: undefined }] : []),
+  { to: '/app/products',      icon: 'products',  label: 'Catalogue', badge: undefined },
+  { to: '/app/caisse',        icon: 'caisse',     label: 'Caisse', badge: undefined },
+  { to: '/app/ventes',        icon: 'ventes',     label: 'Ventes', badge: undefined },
+  { to: '/app/clients',       icon: 'clients',    label: 'Clients', badge: undefined },
+  { to: '/app/movements',     icon: 'movements',  label: 'Mouvements', badge: undefined },
+  { to: '/app/alerts',        icon: 'alerts',     label: 'Alertes', badge: alerts.totalAlerts() || undefined },
+  { to: '/app/config',        icon: 'config',     label: 'Configuration', badge: undefined },
+  ...(auth.isAdmin ? [{ to: '/app/users', icon: 'users', label: 'Utilisateurs', badge: undefined }] : []),
+  ...(auth.isAdmin ? [{ to: '/app/logs',  icon: 'logs',  label: 'Activité',     badge: undefined }] : []),
+])
+
 const navItems = computed(() => {
   if (auth.isSuperAdmin) {
     return [
       { to: '/app/super-admin', icon: 'superadmin', label: 'Plateforme', badge: undefined },
     ]
   }
-  // Secteur non défini → comportement commerce par défaut (plus générique)
-  return auth.isRestauration ? restaurationItems.value : commerceItems.value
+  if (auth.isRestauration)   return restaurationItems.value
+  if (auth.isCommerceSimple) return commerceSimpleItems.value
+  // Secteur non défini → comportement commerce (complet) par défaut, le plus générique
+  return commerceItems.value
 })
 </script>

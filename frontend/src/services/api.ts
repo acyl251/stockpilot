@@ -50,6 +50,7 @@ export const productsApi = {
   destroy: (id: number)            => api.delete(`/products/${id}`),
   checkReference: (reference: string, excludeId?: number) =>
     api.get('/products/check-reference', { params: { reference, exclude_id: excludeId } }),
+  byBarcode: (code: string) => api.get(`/products/by-barcode/${encodeURIComponent(code)}`),
 }
 
 // ─── Stock Movements ──────────────────────────────────────────────────────────

@@ -556,6 +556,7 @@ const supplements = ref<Supplement[]>([])
 const loading = ref(false)
 const search = ref('')
 const barcode = ref('')
+const barcodeInput = ref<HTMLInputElement | null>(null)
 const scanMsg = ref('')
 const scanError = ref(false)
 const cart = ref<CartLine[]>([])
@@ -723,11 +724,41 @@ const canValidate = computed(() => {
   return true
 })
 
+function focusBarcode() {
+  // Laisse le temps au DOM de se stabiliser (toast, re-render du panier…) avant de refocaliser.
+  requestAnimationFrame(() => barcodeInput.value?.focus())
+}
+
+async function addScannedProduct(match: Product) {
+  if (!isCompose(match) && match.quantite <= 0) {
+    scanError.value = true
+    scanMsg.value = `« ${match.nom} » est en rupture.`
+    return
+  }
+  // S'assure que le produit est connu pour le calcul du HT
+  if (!products.value.find((p) => p.id === match.id)) products.value.unshift(match)
+  addToCart(match)
+  scanError.value = false
+  scanMsg.value = `« ${match.nom} » ajouté ✅`
+}
+
 async function scanBarcode() {
   const code = barcode.value.trim()
   if (!code) return
   scanMsg.value = ''
   scanError.value = false
+  barcode.value = ''
+
+  try {
+    // 1) Recherche exacte par vrai code-barres (lecteur USB)
+    const { data: byBarcode } = await productsApi.byBarcode(code)
+    await addScannedProduct(byBarcode)
+    focusBarcode()
+    return
+  } catch {
+    // Pas de code-barres correspondant — on retombe sur la recherche par référence/nom
+  }
+
   try {
     const { data } = await productsApi.list({
       search: code,
@@ -739,21 +770,15 @@ async function scanBarcode() {
     const match = list.find((p) => p.reference?.toLowerCase() === code.toLowerCase()) ?? list[0]
     if (!match) {
       scanError.value = true
-      scanMsg.value = `Aucun produit pour « ${code} ».`
-    } else if (!isCompose(match) && match.quantite <= 0) {
-      scanError.value = true
-      scanMsg.value = `« ${match.nom} » est en rupture.`
+      scanMsg.value = `Produit non trouvé pour « ${code} ».`
     } else {
-      // S'assure que le produit est connu pour le calcul du HT
-      if (!products.value.find((p) => p.id === match.id)) products.value.unshift(match)
-      addToCart(match)
-      scanMsg.value = `« ${match.nom} » ajouté.`
+      await addScannedProduct(match)
     }
   } catch {
     scanError.value = true
     scanMsg.value = 'Erreur de recherche.'
   } finally {
-    barcode.value = ''
+    focusBarcode()
   }
 }
 
@@ -896,6 +921,7 @@ onMounted(async () => {
   }
 
   await Promise.all(tasks)
+  focusBarcode()
 })
 
 onUnmounted(() => {

@@ -288,6 +288,29 @@
     </template>
     <!-- ═══════════════════════════════════════════════════════════════════════ -->
 
+    <!-- ═══ COMMERCE SIMPLE DASHBOARD ═══════════════════════════════════════ -->
+    <template v-if="auth.isCommerceSimple && commerceDash">
+      <div class="card">
+        <h3 class="font-semibold text-navy mb-4">Produits les plus vendus — ce mois</h3>
+        <div v-if="commerceDash.top_produits_vendus.length === 0" class="text-slate-400 text-sm text-center py-6">
+          Aucune vente ce mois.
+        </div>
+        <ol v-else class="space-y-2">
+          <li v-for="(p, i) in commerceDash.top_produits_vendus" :key="p.nom"
+            class="flex items-center gap-3 py-2 border-b border-slate-100 last:border-0">
+            <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+              :class="i === 0 ? 'bg-gold text-navy' : i === 1 ? 'bg-slate-200 text-slate-600' : i === 2 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'">
+              {{ i + 1 }}
+            </span>
+            <span class="flex-1 text-sm text-navy font-medium truncate">{{ p.nom }}</span>
+            <span class="text-xs text-slate-500 whitespace-nowrap">{{ p.qte }} vendus</span>
+            <span class="text-sm font-semibold text-emerald-700 whitespace-nowrap">{{ formatCurrency(p.ca) }}</span>
+          </li>
+        </ol>
+      </div>
+    </template>
+    <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
     <!-- Chiffre d'affaires -->
     <div class="card">
       <h3 class="font-semibold text-navy mb-4">Chiffre d'affaires</h3>

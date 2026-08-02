@@ -117,6 +117,7 @@ Route::middleware('auth.tenant')->group(function () {
     // Product Catalogue
     // Specific route must be declared BEFORE the resource so it isn't captured by products/{product}.
     Route::get('/products/check-reference', [ProductController::class, 'checkReference']);
+    Route::get('/products/by-barcode/{code}', [ProductController::class, 'byBarcode']);
     Route::apiResource('products', ProductController::class);
 
     // Tables & Commandes (secteur restauration uniquement)

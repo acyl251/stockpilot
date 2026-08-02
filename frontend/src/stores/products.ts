@@ -6,6 +6,7 @@ export interface Product {
   id: number
   nom: string
   reference: string
+  code_barres?: string | null
   quantite: number
   seuil_alerte: number
   unite_mesure: string

@@ -35,7 +35,7 @@ class OrganisationController extends Controller
             'telephone'        => 'nullable|string|max:20',
             'adresse'          => 'nullable|string|max:500',
             'matricule_fiscal' => 'nullable|string|max:20',
-            'secteur'          => 'nullable|in:commerce,restauration',
+            'secteur'          => 'nullable|in:commerce,restauration,commerce_simple',
         ]);
 
         $org = Organisation::findOrFail(app('current_organisation_id'));

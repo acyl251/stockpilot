@@ -131,12 +131,13 @@
 
     <!-- Product form modal (create or edit) -->
     <ProductFormModal v-if="showForm" :key="editing?.id ?? 'new'" :product="editing"
-      @close="closeForm" @saved="onSaved" />
+      :default-barcode="defaultBarcode" @close="closeForm" @saved="onSaved" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '@/stores/products'
 import { formatPrice } from '@/utils/currency'
 import { useAuthStore } from '@/stores/auth'
@@ -144,12 +145,15 @@ import ProductFormModal from '@/components/ProductFormModal.vue'
 
 const store         = useProductsStore()
 const auth          = useAuthStore()
+const route         = useRoute()
+const router        = useRouter()
 const search        = ref('')
 const filterStatut  = ref('')
 const filterCategory = ref('')
 const page          = ref(1)
 const showForm      = ref(false)
 const editing       = ref<any | undefined>(undefined)
+const defaultBarcode = ref<string | undefined>(undefined)
 
 let debounceTimer: ReturnType<typeof setTimeout>
 
@@ -169,6 +173,7 @@ function fetchProducts() {
 
 function openCreate() {
   editing.value = undefined
+  defaultBarcode.value = undefined
   showForm.value = true
 }
 
@@ -199,5 +204,14 @@ onMounted(async () => {
     store.fetchTypes(),
     fetchProducts(),
   ])
+
+  // Arrivée depuis le scan rapide (Mouvements) — pré-remplit le code-barres
+  const barcode = route.query.create_barcode
+  if (typeof barcode === 'string' && barcode) {
+    editing.value = undefined
+    defaultBarcode.value = barcode
+    showForm.value = true
+    router.replace({ query: { ...route.query, create_barcode: undefined } })
+  }
 })
 </script>

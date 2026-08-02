@@ -16,6 +16,7 @@ class Product extends BaseModel
         'product_type_id',
         'nom',
         'reference',
+        'code_barres',
         'description',
         'quantite',
         'seuil_alerte',

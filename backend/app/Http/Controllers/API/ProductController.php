@@ -102,6 +102,21 @@ class ProductController extends Controller
         return response()->json(['available' => ! $exists]);
     }
 
+    /** GET /products/by-barcode/{code} — used by USB barcode scanners (caisse + entrée stock). */
+    public function byBarcode(string $code): JsonResponse
+    {
+        $product = Product::with(['category', 'productType'])
+            ->where('code_barres', $code)
+            ->where('actif', true)
+            ->first();
+
+        if (! $product) {
+            return response()->json(['message' => 'Produit introuvable pour ce code-barres.'], 404);
+        }
+
+        return response()->json(new ProductResource($product));
+    }
+
     public function store(Request $request): JsonResponse
     {
         if ($this->isRestrictedOperateur()) {
@@ -124,12 +139,19 @@ class ProductController extends Controller
                                    Rule::unique('products', 'reference')
                                        ->where('actif', true)
                                        ->where('organisation_id', app('current_organisation_id'))],
+            'code_barres'     => ['nullable', 'string', 'max:100',
+                                   Rule::unique('products', 'code_barres')
+                                       ->where('organisation_id', app('current_organisation_id'))],
             'description'     => 'nullable|string|max:1000',
             'seuil_alerte'    => 'required|numeric|min:0',
             'unite_mesure'    => 'nullable|string|max:30',
             'prix_achat_ht'   => 'required|numeric|min:0',
             'taux_tva'        => 'nullable|numeric|min:0|max:100',
             'prix_vente_ht'   => $isIngredient ? 'nullable|numeric|min:0' : 'required|numeric|min:0',
+            'prix_vente_gros'  => 'nullable|numeric|min:0',
+            'unite_vente'      => 'nullable|string|max:30',
+            'quantite_par_lot' => 'nullable|integer|min:0',
+            'lots_par_palette' => 'nullable|integer|min:0',
             'type'            => 'nullable|in:simple,compose',
             'attributs'       => 'nullable|array',
         ]);
@@ -187,12 +209,20 @@ class ProductController extends Controller
                                        ->where('actif', true)
                                        ->where('organisation_id', app('current_organisation_id'))
                                        ->ignore($product->id)],
+            'code_barres'     => ['nullable', 'string', 'max:100',
+                                   Rule::unique('products', 'code_barres')
+                                       ->where('organisation_id', app('current_organisation_id'))
+                                       ->ignore($product->id)],
             'description'     => 'nullable|string|max:1000',
             'seuil_alerte'    => 'sometimes|required|numeric|min:0',
             'unite_mesure'    => 'nullable|string|max:30',
             'prix_achat_ht'   => 'sometimes|required|numeric|min:0',
             'taux_tva'        => 'nullable|numeric|min:0|max:100',
             'prix_vente_ht'   => $isIngredient ? 'nullable|numeric|min:0' : 'sometimes|required|numeric|min:0',
+            'prix_vente_gros'  => 'nullable|numeric|min:0',
+            'unite_vente'      => 'nullable|string|max:30',
+            'quantite_par_lot' => 'nullable|integer|min:0',
+            'lots_par_palette' => 'nullable|integer|min:0',
             'type'            => 'nullable|in:simple,compose',
             'attributs'       => 'nullable|array',
             'actif'           => 'nullable|boolean',

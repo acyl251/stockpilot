@@ -32,6 +32,13 @@
               <p v-else-if="!form.reference" class="text-slate-400 text-xs mt-1">Laissez vide pour générer automatiquement.</p>
             </div>
             <div>
+              <label class="form-label">Code-barres</label>
+              <input v-model="form.code_barres" type="text" autocomplete="off"
+                placeholder="Scannez ou saisissez le code"
+                class="form-input" />
+              <p class="text-slate-400 text-xs mt-1">Optionnel — pour le scan en caisse et en réception.</p>
+            </div>
+            <div>
               <label class="form-label">Unité de mesure</label>
               <select v-if="!customUnit" v-model="form.unite_mesure" class="form-input" @change="onUnitChange">
                 <optgroup v-for="g in UNIT_GROUPS" :key="g.label" :label="g.label">
@@ -304,7 +311,7 @@ import { productsApi, compositionApi } from '@/services/api'
 import { getConversionFactor } from '@/utils/unitConversion'
 import { formatPrice } from '@/utils/currency'
 
-const props = defineProps<{ product?: any; defaultType?: string }>()
+const props = defineProps<{ product?: any; defaultType?: string; defaultBarcode?: string }>()
 const emit  = defineEmits(['close', 'saved'])
 const store = useProductsStore()
 const auth  = useAuthStore()
@@ -331,6 +338,7 @@ const form = ref<any>(props.product
   ? {
       nom:               props.product.nom ?? '',
       reference:         props.product.reference ?? '',
+      code_barres:       props.product.code_barres ?? '',
       description:       props.product.description ?? '',
       unite_mesure:      props.product.unite_mesure ?? 'unité',
       category_id:       props.product.category?.id ?? '',
@@ -347,7 +355,7 @@ const form = ref<any>(props.product
       type:              props.product.type ?? 'simple',
     }
   : {
-      nom: '', reference: '', description: '', unite_mesure: 'unité',
+      nom: '', reference: '', code_barres: props.defaultBarcode ?? '', description: '', unite_mesure: 'unité',
       category_id: '', product_type_id: '',
       seuil_alerte: 0, prix_achat_ht: 0,
       taux_tva: auth.isRestauration ? 0 : 19,

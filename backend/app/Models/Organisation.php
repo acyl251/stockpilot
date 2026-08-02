@@ -68,13 +68,20 @@ class Organisation extends Model
         return $this->plan?->ia_activee ?? false;
     }
 
-    const SECTEUR_COMMERCE     = 'commerce';
-    const SECTEUR_RESTAURATION = 'restauration';
+    const SECTEUR_COMMERCE        = 'commerce';
+    const SECTEUR_RESTAURATION    = 'restauration';
+    const SECTEUR_COMMERCE_SIMPLE = 'commerce_simple';
 
     /** La feature recette/fiche technique n'est active qu'en restauration. */
     public function isRestauration(): bool
     {
         return $this->secteur === self::SECTEUR_RESTAURATION;
+    }
+
+    /** Commerce simple : module allégé (pas de fournisseurs, prix gros, lots/palette). */
+    public function isCommerceSimple(): bool
+    {
+        return $this->secteur === self::SECTEUR_COMMERCE_SIMPLE;
     }
 
     /**

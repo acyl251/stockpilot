@@ -6,18 +6,23 @@
       <div class="flex items-center justify-between mb-1">
         <h2 class="text-lg font-semibold text-navy">Secteur d'activité</h2>
         <span class="text-xs px-2 py-0.5 rounded-full font-medium"
-          :class="org.secteur === 'restauration' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'">
-          {{ org.secteur === 'restauration' ? 'Restauration' : 'Commerce' }}
+          :class="org.secteur === 'restauration' ? 'bg-amber-100 text-amber-700' : org.secteur === 'commerce_simple' ? 'bg-slate-100 text-slate-600' : 'bg-blue-100 text-blue-700'">
+          {{ org.secteur === 'restauration' ? 'Restauration' : org.secteur === 'commerce_simple' ? 'Commerce simple' : 'Commerce' }}
         </span>
       </div>
       <p class="text-sm text-slate-500 mb-4">
         Le secteur détermine les fonctionnalités disponibles.
         <strong>Restauration</strong> active les fiches techniques (produits composés).
+        <strong>Commerce simple</strong> propose un module allégé (sans fournisseurs, prix de gros ni lots/palettes).
       </p>
       <div class="flex items-center gap-4">
         <label class="flex items-center gap-2 cursor-pointer">
           <input type="radio" v-model="org.secteur" value="commerce" class="accent-gold" />
           <span class="text-sm font-medium text-slate-700">Commerce</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="radio" v-model="org.secteur" value="commerce_simple" class="accent-gold" />
+          <span class="text-sm font-medium text-slate-700">Commerce simple</span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer">
           <input type="radio" v-model="org.secteur" value="restauration" class="accent-gold" />
