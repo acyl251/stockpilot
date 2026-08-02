@@ -32,6 +32,8 @@ export const useAuthStore = defineStore('auth', () => {
   const hasAI             = computed(() => user.value?.organisation?.plan?.ia_activee ?? false)
   const isAdmin           = computed(() => ['admin', 'super_admin'].includes(user.value?.role ?? ''))
   const isSuperAdmin      = computed(() => user.value?.role === 'super_admin')
+  // Analytique : admin et gestionnaire uniquement (pas caissier/opérateur)
+  const canViewAnalytics  = computed(() => ['admin', 'gestionnaire'].includes(user.value?.role ?? ''))
   const secteur           = computed(() => user.value?.organisation?.secteur ?? null)
   const isRestauration    = computed(() => user.value?.organisation?.secteur === 'restauration')
   // Commerce par défaut si le secteur n'est pas défini (comportement le plus générique)
@@ -76,5 +78,5 @@ export const useAuthStore = defineStore('auth', () => {
     ? fetchMe().catch(() => logout())
     : Promise.resolve()
 
-  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, secteur, isRestauration, isCommerce, pointDeVenteId, pointDeVente, chaineVisible, isMultiPDV, isRestrictedOperateur, login, logout, fetchMe, initPromise }
+  return { user, accessToken, isAuthenticated, hasAI, isAdmin, isSuperAdmin, canViewAnalytics, secteur, isRestauration, isCommerce, pointDeVenteId, pointDeVente, chaineVisible, isMultiPDV, isRestrictedOperateur, login, logout, fetchMe, initPromise }
 })

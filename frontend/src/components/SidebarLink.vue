@@ -52,6 +52,7 @@ const icons: Record<string, string> = {
   logs:          `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`,
   chaine:        `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>`,
   commandes:     `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 6h6m-6 4h6m-6 4h3"/></svg>`,
+  analytique:    `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5"><circle cx="6" cy="6" r="2.5" stroke-width="2"/><circle cx="18" cy="6" r="2.5" stroke-width="2"/><circle cx="12" cy="18" r="2.5" stroke-width="2"/><path stroke-linecap="round" stroke-width="2" d="M8.2 7.3l2.2 8.7M15.8 7.3l-2.2 8.7M8.3 6h7.4"/></svg>`,
 }
 
 const iconComponent = {

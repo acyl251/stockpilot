@@ -71,6 +71,23 @@ export const clientsApi = {
   relevePdf: (id: number, params?: object) => api.get(`/clients/${id}/releve/pdf`, { params, responseType: 'blob' }),
 }
 
+// ─── Analytique ─────────────────────────────────────────────────────────────────
+export const analytiqueApi = {
+  kpis:            (periode: string) => api.get('/analytique/kpis',               { params: { periode } }),
+  caParJour:       (periode: string) => api.get('/analytique/ca-par-jour',        { params: { periode } }),
+  topProduits:     (periode: string) => api.get('/analytique/top-produits',       { params: { periode } }),
+  paiements:       (periode: string) => api.get('/analytique/paiements',          { params: { periode } }),
+  clientsArdoise:  ()                => api.get('/analytique/clients-ardoise'),
+  caParService:    (periode: string) => api.get('/analytique/ca-par-service',     { params: { periode } }),
+  heuresPointe:    (periode: string) => api.get('/analytique/heures-pointe',      { params: { periode } }),
+  foodCost:        (periode: string) => api.get('/analytique/food-cost',         { params: { periode } }),
+  tables:          (periode: string) => api.get('/analytique/tables',             { params: { periode } }),
+  margeProduits:   (periode: string) => api.get('/analytique/marge-produits',    { params: { periode } }),
+  rotationStocks:  ()                => api.get('/analytique/rotation-stocks'),
+  ventesDetailGros:(periode: string) => api.get('/analytique/ventes-detail-gros', { params: { periode } }),
+  clientsFideles:  (periode: string) => api.get('/analytique/clients-fideles',   { params: { periode } }),
+}
+
 // ─── Commandes clients (secteur commerce) ──────────────────────────────────────
 export const commandesClientsApi = {
   list:              (params?: object)             => api.get('/commandes-clients', { params }),

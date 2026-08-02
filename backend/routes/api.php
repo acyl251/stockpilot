@@ -26,6 +26,7 @@ use App\Http\Controllers\API\StockMovementController;
 use App\Http\Controllers\API\UserController;
 use App\Http\Controllers\API\PointDeVenteController;
 use App\Http\Controllers\API\TransfertController;
+use App\Http\Controllers\API\AnalytiqueController;
 use App\Http\Controllers\API\ChaineController;
 use App\Http\Controllers\API\CommandeClientController;
 use App\Http\Controllers\API\SearchController;
@@ -85,6 +86,23 @@ Route::middleware('auth.tenant')->group(function () {
     Route::get('/dashboard',                    [DashboardController::class, 'index']);
     Route::get('/dashboard/forecast/{product}', [DashboardController::class, 'forecast']);
     Route::get('/dashboard/restaurant',         [DashboardController::class, 'restaurant']);
+
+    // Analytique (admin / gestionnaire uniquement — vérifié dans le contrôleur)
+    Route::prefix('analytique')->group(function () {
+        Route::get('kpis',               [AnalytiqueController::class, 'kpis']);
+        Route::get('ca-par-jour',        [AnalytiqueController::class, 'caParJour']);
+        Route::get('top-produits',       [AnalytiqueController::class, 'topProduits']);
+        Route::get('paiements',          [AnalytiqueController::class, 'paiements']);
+        Route::get('clients-ardoise',    [AnalytiqueController::class, 'clientsArdoise']);
+        Route::get('ca-par-service',     [AnalytiqueController::class, 'caParService']);
+        Route::get('heures-pointe',      [AnalytiqueController::class, 'heuresPointe']);
+        Route::get('food-cost',          [AnalytiqueController::class, 'foodCost']);
+        Route::get('tables',             [AnalytiqueController::class, 'tables']);
+        Route::get('marge-produits',     [AnalytiqueController::class, 'margeProduits']);
+        Route::get('rotation-stocks',    [AnalytiqueController::class, 'rotationStocks']);
+        Route::get('ventes-detail-gros', [AnalytiqueController::class, 'ventesDetailGros']);
+        Route::get('clients-fideles',    [AnalytiqueController::class, 'clientsFideles']);
+    });
 
     // Onboarding (AI-assisted setup + checklist)
     Route::get('/onboarding/checklist',         [OnboardingController::class, 'checklist']);

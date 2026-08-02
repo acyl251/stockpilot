@@ -62,6 +62,7 @@ const commonTailItems = computed(() => [
 
 const restaurationItems = computed(() => [
   { to: '/app',               icon: 'dashboard',    label: 'Tableau de bord', badge: undefined },
+  ...(auth.canViewAnalytics ? [{ to: '/app/analytique', icon: 'analytique', label: 'Analytique', badge: undefined }] : []),
   { to: '/app/products',      icon: 'products',     label: 'Catalogue', badge: undefined },
   { to: '/app/menu',          icon: 'menu',          label: 'Menu', badge: undefined },
   { to: '/app/supplements',   icon: 'supplements',   label: 'Suppléments', badge: undefined },
@@ -74,6 +75,7 @@ const restaurationItems = computed(() => [
 
 const commerceItems = computed(() => [
   { to: '/app',               icon: 'dashboard',    label: 'Tableau de bord', badge: undefined },
+  ...(auth.canViewAnalytics ? [{ to: '/app/analytique', icon: 'analytique', label: 'Analytique', badge: undefined }] : []),
   { to: '/app/products',      icon: 'products',     label: 'Catalogue', badge: undefined },
   { to: '/app/caisse',        icon: 'caisse',        label: 'Caisse', badge: undefined },
   { to: '/app/ventes',        icon: 'ventes',        label: 'Ventes', badge: undefined },

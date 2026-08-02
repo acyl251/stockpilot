@@ -28,6 +28,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         { path: '',         name: 'dashboard',  component: () => import('@/views/DashboardView.vue') },
+        { path: 'analytique', name: 'analytique', component: () => import('@/views/AnalytiqueView.vue') },
         { path: 'products', name: 'products',   component: () => import('@/views/ProductsView.vue') },
         { path: 'products/:id', name: 'product-detail', component: () => import('@/views/ProductDetailView.vue') },
         { path: 'menu',        name: 'menu',        component: () => import('@/views/MenuView.vue') },
@@ -70,7 +71,10 @@ const router = createRouter({
 const superAdminRoutes = new Set(['super-admin', 'users'])
 
 // Routes tenant (catalogue, mouvements…) interdites au super_admin
-const tenantRoutes = new Set(['dashboard', 'products', 'menu', 'supplements', 'tables', 'consommation', 'caisse', 'ventes', 'clients', 'commandes-clients', 'product-detail', 'movements', 'fournisseurs', 'alerts', 'config', 'logs', 'points-de-vente', 'transferts', 'chaine'])
+const tenantRoutes = new Set(['dashboard', 'analytique', 'products', 'menu', 'supplements', 'tables', 'consommation', 'caisse', 'ventes', 'clients', 'commandes-clients', 'product-detail', 'movements', 'fournisseurs', 'alerts', 'config', 'logs', 'points-de-vente', 'transferts', 'chaine'])
+
+// Routes réservées aux admin/gestionnaire (pas caissier/opérateur)
+const analyticsRoutes = new Set(['analytique'])
 
 router.beforeEach(async (to) => {
   const auth = useAuthStore()
@@ -93,6 +97,11 @@ router.beforeEach(async (to) => {
 
     // Utilisateurs normaux ne peuvent pas accéder aux routes super admin
     if (!auth.isSuperAdmin && superAdminRoutes.has(String(to.name)) && to.name !== 'users') {
+      return { name: 'dashboard' }
+    }
+
+    // Analytique réservée à admin/gestionnaire
+    if (analyticsRoutes.has(String(to.name)) && !auth.canViewAnalytics) {
       return { name: 'dashboard' }
     }
 
