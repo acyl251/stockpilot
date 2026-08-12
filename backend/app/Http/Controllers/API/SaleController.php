@@ -163,26 +163,48 @@ class SaleController extends Controller
             ])->id;
         }
 
-        $sale = $this->saleService->createSale(
-            items:          $data['items'],
-            userId:         $currentUser->id,
-            modePaiement:   $data['mode_paiement'],
-            montantPaye:    $data['montant_paye'] ?? null,
-            remiseType:     $data['remise_type'] ?? null,
-            remiseValeur:   $data['remise_valeur'] ?? null,
-            clientId:       $clientId,
-            referenceCarte: $data['reference_carte'] ?? null,
-            pointDeVenteId: $pdvId,
-        );
+        try {
+            $sale = $this->saleService->createSale(
+                items:          $data['items'],
+                userId:         $currentUser->id,
+                modePaiement:   $data['mode_paiement'],
+                montantPaye:    $data['montant_paye'] ?? null,
+                remiseType:     $data['remise_type'] ?? null,
+                remiseValeur:   $data['remise_valeur'] ?? null,
+                clientId:       $clientId,
+                referenceCarte: $data['reference_carte'] ?? null,
+                pointDeVenteId: $pdvId,
+            );
 
-        $sale->load(['items.product:id,nom,reference', 'user:id,nom,prenom', 'client:id,nom,telephone']);
+            $sale->load(['items.product:id,nom,reference', 'user:id,nom,prenom', 'client:id,nom,telephone']);
 
-        ActivityLogService::log('sold', 'caisse',
-            "Vente #{$sale->numero} — " . number_format((float) $sale->total_ttc, 3, '.', '') . " TND — {$sale->items->count()} articles",
-            ['sale_id' => $sale->id, 'total' => (float) $sale->total_ttc]
-        );
+            ActivityLogService::log('sold', 'caisse',
+                "Vente #{$sale->numero} — " . number_format((float) $sale->total_ttc, 3, '.', '') . " TND — {$sale->items->count()} articles",
+                ['sale_id' => $sale->id, 'total' => (float) $sale->total_ttc]
+            );
 
-        return response()->json($sale, 201);
+            return response()->json($sale, 201);
+        } catch (\Throwable $e) {
+            // Toujours loggé côté serveur, avec le détail complet — consultable dans les logs Railway.
+            \Log::error('Échec de création de vente (POST /sales)', [
+                'user_id' => $currentUser->id,
+                'error'   => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+            // Le détail n'est renvoyé au client que si APP_DEBUG=true (jamais en prod par défaut) —
+            // éviter la fuite d'info (chemins serveur, requêtes SQL) sur une route publique d'un repo public.
+            $payload = ['success' => false, 'message' => 'Une erreur interne est survenue lors de la création de la vente.'];
+            if (config('app.debug')) {
+                $payload['error'] = $e->getMessage();
+                $payload['file']  = $e->getFile();
+                $payload['line']  = $e->getLine();
+            }
+
+            return response()->json($payload, 500);
+        }
     }
 
     public function show(int $id): JsonResponse
