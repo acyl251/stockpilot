@@ -75,7 +75,8 @@
             </div>
             <div v-if="!(auth.isRestauration && form.type === 'compose')">
               <label class="form-label">{{ auth.isRestauration ? 'Prix achat TTC (DT)' : 'Prix achat HT (DT)' }} *</label>
-              <input v-model.number="form.prix_achat_ht" @blur="touched.prix_achat_ht = true" type="number" min="0" step="0.001"
+              <input :value="form.prix_achat_ht" @input="onPriceInput($event, 'prix_achat_ht')" @blur="touched.prix_achat_ht = true"
+                type="text" inputmode="decimal"
                 :class="['form-input', touched.prix_achat_ht && errors.prix_achat_ht ? 'input-error' : '']" />
               <p v-if="touched.prix_achat_ht && errors.prix_achat_ht" class="text-red-500 text-xs mt-1">{{ errors.prix_achat_ht }}</p>
             </div>
@@ -92,7 +93,8 @@
                 {{ auth.isRestauration ? 'Prix vente TTC (DT)' : 'Prix vente HT (DT)' }}
                 <span v-if="!prixVenteOptionnel"> *</span>
               </label>
-              <input v-model.number="form.prix_vente_ht" @blur="touched.prix_vente_ht = true" type="number" min="0" step="0.001"
+              <input :value="form.prix_vente_ht" @input="onPriceInput($event, 'prix_vente_ht')" @blur="touched.prix_vente_ht = true"
+                type="text" inputmode="decimal"
                 :class="['form-input',
                   touched.prix_vente_ht && (errors.prix_vente_ht || marginNegative) ? 'input-error' :
                   marginPositive ? 'border-emerald-400' : '']" />
@@ -105,7 +107,8 @@
             <!-- Prix vente gros (commerce only) -->
             <div v-if="auth.secteur === 'commerce'">
               <label class="form-label">Prix vente gros (DT)</label>
-              <input v-model.number="form.prix_vente_gros" type="number" min="0" step="0.001"
+              <input :value="form.prix_vente_gros" @input="onPriceInput($event, 'prix_vente_gros')"
+                type="text" inputmode="decimal"
                 class="form-input" />
               <p class="text-slate-400 text-xs mt-1">Optionnel — pour vente en gros (dépôts, distributeurs)</p>
             </div>
@@ -309,7 +312,7 @@ import { useProductsStore } from '@/stores/products'
 import { useAuthStore } from '@/stores/auth'
 import { productsApi, compositionApi } from '@/services/api'
 import { getConversionFactor } from '@/utils/unitConversion'
-import { formatPrice } from '@/utils/currency'
+import { formatPrice, parsePrice } from '@/utils/currency'
 
 const props = defineProps<{ product?: any; defaultType?: string; defaultBarcode?: string }>()
 const emit  = defineEmits(['close', 'saved'])
@@ -363,6 +366,10 @@ const form = ref<any>(props.product
       unite_vente: '', quantite_par_lot: 0, lots_par_palette: 0,
       attributs: {}, type: props.defaultType ?? 'simple',
     })
+
+function onPriceInput(e: Event, field: 'prix_achat_ht' | 'prix_vente_ht' | 'prix_vente_gros') {
+  form.value[field] = parsePrice((e.target as HTMLInputElement).value)
+}
 
 const selectedTypeAttrs = computed(() => {
   if (! form.value.product_type_id) return []

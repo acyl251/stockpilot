@@ -91,7 +91,7 @@
           <!-- Prix de vente -->
           <div>
             <label class="form-label">Prix de vente TTC (DT) *</label>
-            <input v-model.number="form.prix_vente" type="number" min="0" step="0.001" class="form-input" />
+            <input :value="form.prix_vente" @input="onPrixVenteInput" type="text" inputmode="decimal" class="form-input" />
           </div>
 
           <!-- Ingrédient -->
@@ -148,7 +148,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supplementsApi, productsApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { getConversionFactor } from '@/utils/unitConversion'
-import { formatPrice } from '@/utils/currency'
+import { formatPrice, parsePrice } from '@/utils/currency'
 
 interface Ingredient { id: number; nom: string; unite_mesure: string; prix_achat_ht: number }
 interface Supplement {
@@ -168,6 +168,10 @@ const modalError  = ref('')
 
 const emptyForm = () => ({ nom: '', prix_vente: 0, ingredient_id: null as number | null, quantite: 0, unite: '', active: true })
 const form = ref(emptyForm())
+
+function onPrixVenteInput(e: Event) {
+  form.value.prix_vente = parsePrice((e.target as HTMLInputElement).value)
+}
 
 async function load() {
   loading.value = true

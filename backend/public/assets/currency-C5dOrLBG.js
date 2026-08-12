@@ -1,0 +1,1 @@
+const a=new Intl.NumberFormat("fr-TN",{minimumFractionDigits:3,maximumFractionDigits:3});function i(r){return a.format(Number(r??0))+" DT"}function n(r){if(typeof r=="number")return isNaN(r)?0:r;const e=String(r??"").trim().replace(",",".").replace(/[^0-9.]/g,""),t=parseFloat(e);return isNaN(t)?0:t}export{i as f,n as p};

@@ -217,7 +217,7 @@
         </div>
 
         <div v-if="mode === 'especes'" class="space-y-2">
-          <input v-model.number="montantPaye" type="number" step="0.001" min="0"
+          <input :value="montantPaye ?? ''" @input="onMontantPayeInput" type="text" inputmode="decimal"
             placeholder="Montant reçu"
             class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
           <div v-if="montantPaye" class="flex justify-between text-sm font-semibold"
@@ -260,7 +260,7 @@
           </div>
           <input v-else v-model="clientTelephone" placeholder="Téléphone (optionnel, nouveau client)"
             class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
-          <input v-model.number="montantPaye" type="number" step="0.001" min="0"
+          <input :value="montantPaye ?? ''" @input="onMontantPayeInput" type="text" inputmode="decimal"
             placeholder="Acompte versé maintenant (optionnel)"
             class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold" />
           <div class="flex justify-between text-sm font-semibold text-amber-700">
@@ -396,7 +396,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { productsApi, salesApi, clientsApi, supplementsApi, pointsDeVenteApi } from '@/services/api'
 import { useAuthStore } from '@/stores/auth'
 import { printReceipt } from '@/utils/print'
-import { formatPrice } from '@/utils/currency'
+import { formatPrice, parsePrice } from '@/utils/currency'
 
 interface Product {
   id: number; nom: string; reference: string
@@ -562,6 +562,10 @@ const scanError = ref(false)
 const cart = ref<CartLine[]>([])
 const mode = ref<'especes' | 'carte' | 'credit'>('especes')
 const montantPaye = ref<number | null>(null)
+function onMontantPayeInput(e: Event) {
+  const raw = (e.target as HTMLInputElement).value
+  montantPaye.value = raw === '' ? null : parsePrice(raw)
+}
 const referenceCarte = ref('')
 const remiseType = ref<'pourcentage' | 'montant' | null>(null)
 const remiseValeur = ref<number | null>(null)

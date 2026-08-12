@@ -238,7 +238,7 @@
               <input v-model="item.unite" placeholder="Unité" class="input-field w-full text-xs" />
             </div>
             <div class="col-span-2">
-              <input v-model.number="item.prix_unitaire" type="number" min="0" step="0.001"
+              <input :value="item.prix_unitaire ?? ''" @input="onPrixUnitaireInput(item, $event)" type="text" inputmode="decimal"
                 placeholder="Prix" class="input-field w-full text-xs" />
             </div>
             <div class="col-span-1 flex justify-center">
@@ -348,7 +348,7 @@
             </div>
             <div>
               <label class="block text-slate-500 mb-1">Prix unitaire réel (optionnel)</label>
-              <input v-model.number="item.prix_unitaire_reel" type="number" min="0" step="0.001"
+              <input :value="item.prix_unitaire_reel ?? ''" @input="onPrixUnitaireInput(item, $event, 'prix_unitaire_reel')" type="text" inputmode="decimal"
                 placeholder="DT" class="input-field w-full text-sm" />
             </div>
           </div>
@@ -369,7 +369,12 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { fournisseursApi, commandesFournisseurApi, productsApi } from '@/services/api'
-import { formatPrice } from '@/utils/currency'
+import { formatPrice, parsePrice } from '@/utils/currency'
+
+function onPrixUnitaireInput(item: any, e: Event, field = 'prix_unitaire') {
+  const raw = (e.target as HTMLInputElement).value
+  item[field] = raw === '' ? null : parsePrice(raw)
+}
 
 interface Fournisseur { id: number; nom: string; telephone?: string; email?: string; adresse?: string; note?: string; active: boolean }
 interface CommandeItem { id: number; product_id: number; quantite: number; prix_unitaire?: number; unite: string; product?: any }
