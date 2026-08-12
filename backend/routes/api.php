@@ -63,6 +63,33 @@ Route::get('/scheduler/run', function (\Illuminate\Http\Request $request) {
     ]);
 });
 
+// TEMPORAIRE — diagnostic Railway (console n'affiche pas l'output artisan).
+// À SUPPRIMER une fois les migrations vérifiées : exécute `migrate --force` sur prod via GET.
+Route::get('/run-migrations', function (\Illuminate\Http\Request $request) {
+    $secret = getenv('SCHEDULER_SECRET')
+           ?: ($_SERVER['SCHEDULER_SECRET'] ?? null)
+           ?: ($_ENV['SCHEDULER_SECRET'] ?? null)
+           ?: env('SCHEDULER_SECRET', 'stockpilot_cron_2026');
+
+    if (empty($secret) || $request->get('token') !== $secret) {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    try {
+        \Artisan::call('migrate', ['--force' => true]);
+        return response()->json([
+            'success' => true,
+            'output'  => \Artisan::output(),
+        ]);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'success' => false,
+            'error'   => $e->getMessage(),
+            'output'  => \Artisan::output(),
+        ], 500);
+    }
+});
+
 Route::post('/auth/login',         [AuthController::class, 'login']);
 Route::post('/demo-request',       [DemoRequestController::class, 'store']);
 Route::get('/verify-email/{token}', EmailVerificationController::class);
